@@ -1,0 +1,5 @@
+TESTAR:    de dois cliques em INICIAR.bat (precisa do Node.js instalado: nodejs.org)
+COMPARTILHAR: de dois cliques em GERAR-INSTALADOR.bat. Na pasta "dist" vai aparecer:
+  - Luquinhas Boost x.x.x.exe  (portatil, 1 arquivo, e so mandar pros amigos)
+  - Luquinhas Boost Setup x.x.x.exe (instalador)
+Discord: cole o link do seu servidor na constante DISCORD do main.js.
