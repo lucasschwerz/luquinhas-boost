@@ -7,5 +7,10 @@ contextBridge.exposeInMainWorld('api', {
   appsList: () => r.invoke('apps:list'),
   appsUninstall: ids => r.invoke('apps:uninstall', ids),
   appsExport: ids => r.invoke('apps:export', ids),
+  cs2Cfg: n => r.invoke('cs2:cfg', n),
+  cs2Install: ids => r.invoke('cs2:install', ids),
+  copy: t => r.invoke('copy', t),
+  update: () => r.invoke('update'),
+  open: u => r.invoke('open', u),
   link: () => r.invoke('link'),
 });

@@ -1,8 +1,9 @@
-const { app, BrowserWindow, ipcMain, shell, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, dialog, clipboard } = require('electron');
 const path = require('path'), fs = require('fs'), os = require('os');
 const { exec, execFile } = require('child_process');
 
 const BRAND = 'Luquinhas Boost';
+const GITHUB_REPO = 'lucasschwerz/luquinhas-boost'; // troque pelo seu usuario/repositorio do GitHub
 const DISCORD = ''; // cole aqui o link do seu servidor (ex: https://discord.gg/xxxx)
 
 const run = c => new Promise(r => exec(c, { shell: 'cmd.exe', windowsHide: true }, e => r(!e)));
@@ -49,8 +50,6 @@ const T = [
     off: [R(AC + 'StickyKeys', 'Flags', 'REG_SZ', 510), R(AC + 'Keyboard Response', 'Flags', 'REG_SZ', 126), R(AC + 'ToggleKeys', 'Flags', 'REG_SZ', 62)] },
   { id: 'priority', n: 'Prioridade Alta para o CS2', d: 'O Windows sempre abre o cs2.exe com prioridade alta.', c: ['Gaming', 'Desempenho'], star: 1,
     on: [R(IFEO, 'CpuPriorityClass', 'REG_DWORD', 3)], off: [D(IFEO)] },
-  { id: 'hags', n: 'Agendamento de GPU por Hardware', d: 'Reduz latência em GPUs compatíveis. Reinicie o PC.', c: ['GPU', 'Gaming'],
-    on: [R('HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers', 'HwSchMode', 'REG_DWORD', 2)], off: [R('HKLM\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers', 'HwSchMode', 'REG_DWORD', 1)] },
   { id: 'bgapps', n: 'Bloquear Apps em Segundo Plano', d: 'Libera CPU e RAM impedindo apps de rodarem escondidos.', c: ['Desempenho'],
     on: [R(CU + 'BackgroundAccessApplications', 'GlobalUserDisabled', 'REG_DWORD', 1)], off: [R(CU + 'BackgroundAccessApplications', 'GlobalUserDisabled', 'REG_DWORD', 0)] },
   { id: 'hibernate', n: 'Desativar Hibernação', d: 'Remove o arquivo de hibernação e libera espaço no disco.', c: ['Desempenho'],
@@ -86,9 +85,9 @@ async function apply(ids, enable) {
 }
 
 ipcMain.handle('init', async () => ({
-  brand: BRAND, discord: !!DISCORD,
+  brand: BRAND, discord: !!DISCORD, user: os.userInfo().username, ver: app.getVersion(),
   tweaks: T.map(({ id, n, d, c, star }) => ({ id, n, d, c, star })),
-  applied: load().applied || [], lastClean: load().lastClean || null,
+  applied: (load().applied || []).filter(id => T.some(t => t.id === id)), lastClean: load().lastClean || null,
   admin: await run('net session >nul 2>&1'), sys: await sys(),
 }));
 ipcMain.handle('tweaks', (_e, ids, en) => apply(ids, en));
@@ -125,11 +124,59 @@ ipcMain.handle('apps:export', async (_e, ids) => {
   if (!filePath) return false;
   fs.writeFileSync(filePath, list.map(a => a.n + (a.v ? ' ' + a.v : '')).join('\r\n')); return true;
 });
+ipcMain.handle('copy', (_e, t) => (clipboard.writeText(String(t)), true));
+const CFG_OK = ['principal', 'treino'];
+ipcMain.handle('cs2:cfg', (_e, n) => { if (!CFG_OK.includes(n)) return ''; try { return fs.readFileSync(path.join(__dirname, 'cfg', n + '.cfg'), 'utf8'); } catch { return ''; } });
+async function cs2CfgDir() {
+  const q = await new Promise(r => exec('reg query "HKCU\\Software\\Valve\\Steam" /v SteamPath', { windowsHide: true }, (e, o) => r(e ? '' : o)));
+  const mt = q.match(/SteamPath\s+REG_SZ\s+(.+)/), libs = [];
+  if (mt) {
+    const root = mt[1].trim().replace(/\//g, '\\'); libs.push(root);
+    try {
+      const v = fs.readFileSync(path.join(root, 'steamapps', 'libraryfolders.vdf'), 'utf8');
+      for (const x of v.matchAll(/"path"\s+"([^"]+)"/g)) libs.push(x[1].replace(/\\\\/g, '\\'));
+    } catch {}
+  }
+  for (const l of libs) {
+    const d = path.join(l, 'steamapps', 'common', 'Counter-Strike Global Offensive', 'game', 'csgo', 'cfg');
+    if (fs.existsSync(d)) return d;
+  }
+  return null;
+}
+ipcMain.handle('cs2:install', async (_e, files) => {
+  files = (files || []).filter(f => f && /^[A-Za-z0-9_-]{1,40}$/.test(f.name) && typeof f.text === 'string' && f.text.length < 200000);
+  if (!files.length) return { ok: false };
+  let dir = await cs2CfgDir();
+  if (!dir) {
+    const r = await dialog.showOpenDialog({ title: 'Selecione a pasta cfg do CS2 (game\\csgo\\cfg)', properties: ['openDirectory'] });
+    if (r.canceled) return { ok: false, cancel: true };
+    dir = r.filePaths[0];
+  }
+  try { for (const f of files) fs.writeFileSync(path.join(dir, f.name + '.cfg'), f.text, 'utf8'); return { ok: true, dir }; }
+  catch { return { ok: false }; }
+});
+const getJSON = url => new Promise(res => {
+  const rq = require('https').get(url, { headers: { 'User-Agent': 'luquinhas-boost' }, timeout: 6000 }, r => {
+    let b = ''; r.on('data', d => b += d); r.on('end', () => { try { res(JSON.parse(b)); } catch { res(null); } });
+  });
+  rq.on('error', () => res(null)); rq.on('timeout', () => { rq.destroy(); res(null); });
+});
+const newer = (a, b) => {
+  const x = a.replace(/^v/, '').split('.').map(Number), y = b.split('.').map(Number);
+  for (let i = 0; i < 3; i++) { if ((x[i] || 0) > (y[i] || 0)) return true; if ((x[i] || 0) < (y[i] || 0)) return false; }
+  return false;
+};
+ipcMain.handle('update', async () => {
+  if (!GITHUB_REPO || GITHUB_REPO.includes('SEU_USUARIO')) return null;
+  const j = await getJSON(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`);
+  return j && j.tag_name && newer(j.tag_name, app.getVersion()) ? { v: j.tag_name, url: j.html_url } : null;
+});
+ipcMain.handle('open', (_e, u) => /^https:\/\/github\.com\//.test(u) && shell.openExternal(u));
 ipcMain.handle('link', () => DISCORD && shell.openExternal(DISCORD));
 
 app.whenReady().then(() => {
   app.setAppUserModelId('com.luquinhas.boost');
-  const win = new BrowserWindow({ width: 1180, height: 740, minWidth: 960, minHeight: 600, backgroundColor: '#07060b', autoHideMenuBar: true, icon: path.join(__dirname, 'icon.png'),
+  const win = new BrowserWindow({ width: 1180, height: 740, minWidth: 960, minHeight: 600, backgroundColor: '#07060b', autoHideMenuBar: true, titleBarStyle: 'hidden', titleBarOverlay: { color: '#07060b', symbolColor: '#c4b5fd', height: 36 }, icon: path.join(__dirname, 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true } });
   win.loadFile('index.html');
 });
