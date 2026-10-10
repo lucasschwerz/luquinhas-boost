@@ -3,7 +3,7 @@ const path = require('path'), fs = require('fs'), os = require('os');
 const { exec, execFile } = require('child_process');
 
 const BRAND = 'Luquinhas Boost';
-const GITHUB_REPO = 'lucasschwerz/luquinhas-boost'; // troque pelo seu usuario/repositorio do GitHub
+const GITHUB_REPO = 'lucasschwerz/luquinhas-boost'; // usuario/repositorio do GitHub (aviso de atualizacao)
 const DISCORD = ''; // cole aqui o link do seu servidor (ex: https://discord.gg/xxxx)
 
 const run = c => new Promise(r => exec(c, { shell: 'cmd.exe', windowsHide: true }, e => r(!e)));
@@ -172,6 +172,14 @@ ipcMain.handle('update', async () => {
   return j && j.tag_name && newer(j.tag_name, app.getVersion()) ? { v: j.tag_name, url: j.html_url } : null;
 });
 ipcMain.handle('open', (_e, u) => /^https:\/\/github\.com\//.test(u) && shell.openExternal(u));
+ipcMain.handle('elevate', () => new Promise(res => {
+  const exe = process.env.PORTABLE_EXECUTABLE_FILE || process.execPath;
+  const args = app.isPackaged ? [] : [app.getAppPath()];
+  const q = s => "'" + s.replace(/'/g, "''") + "'";
+  const cmd = `Start-Process -FilePath ${q(exe)} ${args.length ? '-ArgumentList ' + args.map(q).join(',') + ' ' : ''}-Verb RunAs`;
+  execFile('powershell', ['-NoProfile', '-Command', cmd], { windowsHide: true }, err => { if (!err) app.quit(); res(!err); });
+}));
+ipcMain.handle('theme', (e, c) => { try { if (/^#[0-9a-f]{6}$/i.test(c)) BrowserWindow.fromWebContents(e.sender).setTitleBarOverlay({ color: '#07060b', symbolColor: c, height: 36 }); } catch {} });
 ipcMain.handle('link', () => DISCORD && shell.openExternal(DISCORD));
 
 app.whenReady().then(() => {

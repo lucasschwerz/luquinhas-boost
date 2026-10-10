@@ -4,5 +4,7 @@ COMPARTILHAR: de dois cliques em GERAR-INSTALADOR.bat. Na pasta "dist" vai apare
   - Luquinhas Boost Setup x.x.x.exe (instalador)
 Discord: cole o link do seu servidor na constante DISCORD do main.js.
 
-Atualizacao automatica: no main.js troque GITHUB_REPO por seuusuario/luquinhas-boost.
+Atualizacao automatica: o main.js ja aponta para lucasschwerz/luquinhas-boost (GITHUB_REPO).
 Para avisar uma versao nova: aumente "version" no package.json, gere o .exe e crie uma Release no GitHub com a tag vX.Y.Z.
+
+O programa abre normalmente. Para ajustes que exigem permissao de administrador, use o botao 'Reiniciar como administrador' no topo do programa.

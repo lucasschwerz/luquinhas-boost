@@ -12,5 +12,7 @@ contextBridge.exposeInMainWorld('api', {
   copy: t => r.invoke('copy', t),
   update: () => r.invoke('update'),
   open: u => r.invoke('open', u),
+  elevate: () => r.invoke('elevate'),
+  theme: c => r.invoke('theme', c),
   link: () => r.invoke('link'),
 });
