@@ -1,10 +1,6 @@
 TESTAR:    de dois cliques em INICIAR.bat (precisa do Node.js instalado: nodejs.org)
-COMPARTILHAR: de dois cliques em GERAR-INSTALADOR.bat. Na pasta "dist" vai aparecer:
-  - Luquinhas Boost x.x.x.exe  (portatil, 1 arquivo, e so mandar pros amigos)
-  - Luquinhas Boost Setup x.x.x.exe (instalador)
-Discord: cole o link do seu servidor na constante DISCORD do main.js.
-
+COMPARTILHAR: de dois cliques em GERAR-INSTALADOR.bat. Na pasta "dist" vai aparecer o instalador
+  "Luquinhas Boost Setup x.x.x.exe" - e esse arquivo que voce manda pros amigos.
 Atualizacao automatica: o main.js ja aponta para lucasschwerz/luquinhas-boost (GITHUB_REPO).
-Para avisar uma versao nova: aumente "version" no package.json, gere o .exe e crie uma Release no GitHub com a tag vX.Y.Z.
-
-O programa abre normalmente. Para ajustes que exigem permissao de administrador, use o botao 'Reiniciar como administrador' no topo do programa.
+Para avisar uma versao nova: aumente "version" no package.json, gere o instalador e crie uma Release no GitHub com a tag vX.Y.Z.
+O programa abre normalmente. Para ajustes que exigem permissao de administrador, use o botao 'Reiniciar como administrador' no topo.

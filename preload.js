@@ -13,6 +13,9 @@ contextBridge.exposeInMainWorld('api', {
   update: () => r.invoke('update'),
   open: u => r.invoke('open', u),
   elevate: () => r.invoke('elevate'),
-  theme: c => r.invoke('theme', c),
+  theme: o => r.invoke('theme', o),
+  health: () => r.invoke('health'),
+  bloatList: () => r.invoke('bloat:list'),
+  bloatRemove: ids => r.invoke('bloat:remove', ids),
   link: () => r.invoke('link'),
 });

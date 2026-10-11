@@ -35,11 +35,11 @@ const DC = 'HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection';
 const CP = 'HKCU\\Software\\Policies\\Microsoft\\Windows\\WindowsCopilot';
 
 const T = [
-  { id: 'power', n: 'Plano de Energia Alto Desempenho', d: 'Mantém a CPU em clock máximo durante as partidas.', c: ['Desempenho', 'Gaming'], star: 1,
+  { id: 'power', fps: 1, n: 'Plano de Energia Alto Desempenho', d: 'Mantém a CPU em clock máximo durante as partidas.', c: ['Desempenho', 'Gaming'], star: 1,
     on: ['powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'], off: ['powercfg /setactive 381b4222-f694-41f0-9685-ff5bb260df2e'] },
-  { id: 'gamemode', n: 'Ativar Modo de Jogo', d: 'Prioriza o jogo e reduz interferência do Windows.', c: ['Gaming'], star: 1,
+  { id: 'gamemode', fps: 1, n: 'Ativar Modo de Jogo', d: 'Prioriza o jogo e reduz interferência do Windows.', c: ['Gaming'], star: 1,
     on: [R('HKCU\\Software\\Microsoft\\GameBar', 'AutoGameModeEnabled', 'REG_DWORD', 1)], off: [R('HKCU\\Software\\Microsoft\\GameBar', 'AutoGameModeEnabled', 'REG_DWORD', 0)] },
-  { id: 'dvr', n: 'Desativar Game DVR / Captura', d: 'Desliga a gravação em segundo plano da Xbox Game Bar.', c: ['Gaming', 'Privacidade'], star: 1,
+  { id: 'dvr', fps: 1, n: 'Desativar Game DVR / Captura', d: 'Desliga a gravação em segundo plano da Xbox Game Bar.', c: ['Gaming', 'Privacidade'], star: 1,
     on: [R('HKCU\\System\\GameConfigStore', 'GameDVR_Enabled', 'REG_DWORD', 0), R(CU + 'GameDVR', 'AppCaptureEnabled', 'REG_DWORD', 0)],
     off: [R('HKCU\\System\\GameConfigStore', 'GameDVR_Enabled', 'REG_DWORD', 1), R(CU + 'GameDVR', 'AppCaptureEnabled', 'REG_DWORD', 1)] },
   { id: 'mouse', n: 'Desativar Aceleração do Mouse', d: 'Mira consistente. Vale após reiniciar a sessão do Windows.', c: ['Gaming'], star: 1,
@@ -48,13 +48,13 @@ const T = [
   { id: 'sticky', n: 'Bloquear Pop-ups de Teclas de Aderência', d: 'Chega de janela do Shift atrapalhando no meio do round.', c: ['Gaming'], star: 1,
     on: [R(AC + 'StickyKeys', 'Flags', 'REG_SZ', 506), R(AC + 'Keyboard Response', 'Flags', 'REG_SZ', 122), R(AC + 'ToggleKeys', 'Flags', 'REG_SZ', 58)],
     off: [R(AC + 'StickyKeys', 'Flags', 'REG_SZ', 510), R(AC + 'Keyboard Response', 'Flags', 'REG_SZ', 126), R(AC + 'ToggleKeys', 'Flags', 'REG_SZ', 62)] },
-  { id: 'priority', n: 'Prioridade Alta para o CS2', d: 'O Windows sempre abre o cs2.exe com prioridade alta.', c: ['Gaming', 'Desempenho'], star: 1,
+  { id: 'priority', fps: 1, n: 'Prioridade Alta para o CS2', d: 'O Windows sempre abre o cs2.exe com prioridade alta.', c: ['Gaming', 'Desempenho'], star: 1,
     on: [R(IFEO, 'CpuPriorityClass', 'REG_DWORD', 3)], off: [D(IFEO)] },
-  { id: 'bgapps', n: 'Bloquear Apps em Segundo Plano', d: 'Libera CPU e RAM impedindo apps de rodarem escondidos.', c: ['Desempenho'],
+  { id: 'bgapps', fps: 1, n: 'Bloquear Apps em Segundo Plano', d: 'Libera CPU e RAM impedindo apps de rodarem escondidos.', c: ['Desempenho'],
     on: [R(CU + 'BackgroundAccessApplications', 'GlobalUserDisabled', 'REG_DWORD', 1)], off: [R(CU + 'BackgroundAccessApplications', 'GlobalUserDisabled', 'REG_DWORD', 0)] },
   { id: 'hibernate', n: 'Desativar Hibernação', d: 'Remove o arquivo de hibernação e libera espaço no disco.', c: ['Desempenho'],
     on: ['powercfg /h off'], off: ['powercfg /h on'] },
-  { id: 'transp', n: 'Desativar Transparências', d: 'Interface do Windows mais leve.', c: ['Aparência', 'Desempenho'],
+  { id: 'transp', fps: 1, n: 'Desativar Transparências', d: 'Interface do Windows mais leve.', c: ['Aparência', 'Desempenho'],
     on: [R(CU + 'Themes\\Personalize', 'EnableTransparency', 'REG_DWORD', 0)], off: [R(CU + 'Themes\\Personalize', 'EnableTransparency', 'REG_DWORD', 1)] },
   { id: 'taskbar', n: 'Barra de Tarefas à Esquerda', d: 'Alinha os ícones à esquerda (Windows 11).', c: ['Geral', 'Aparência'],
     on: [R(CU + 'Explorer\\Advanced', 'TaskbarAl', 'REG_DWORD', 0)], off: [R(CU + 'Explorer\\Advanced', 'TaskbarAl', 'REG_DWORD', 1)] },
@@ -64,6 +64,12 @@ const T = [
     on: [R(CU + 'AdvertisingInfo', 'Enabled', 'REG_DWORD', 0)], off: [R(CU + 'AdvertisingInfo', 'Enabled', 'REG_DWORD', 1)] },
   { id: 'copilot', n: 'Desativar Copilot', d: 'Remove o recurso Copilot da Microsoft.', c: ['Privacidade', 'Geral'],
     on: [R(CP, 'TurnOffWindowsCopilotFeature', 'REG_DWORD', 1)], off: [D(CP, 'TurnOffWindowsCopilotFeature')] },
+  { id: 'visualfx', fps: 1, n: 'Desativar Animações e Efeitos Visuais', d: 'Desliga animações, sombras e efeitos do Windows. Reinicie a sessão para valer tudo.', c: ['Desempenho', 'Aparência'],
+    on: [R(CU + 'Explorer\\VisualEffects', 'VisualFXSetting', 'REG_DWORD', 2), R('HKCU\\Control Panel\\Desktop\\WindowMetrics', 'MinAnimate', 'REG_SZ', 0), R(CU + 'Explorer\\Advanced', 'TaskbarAnimations', 'REG_DWORD', 0), R(CU + 'Explorer\\Advanced', 'ListviewAlphaSelect', 'REG_DWORD', 0), R(CU + 'Explorer\\Advanced', 'ListviewShadow', 'REG_DWORD', 0), R('HKCU\\Software\\Microsoft\\Windows\\DWM', 'EnableAeroPeek', 'REG_DWORD', 0)],
+    off: [R(CU + 'Explorer\\VisualEffects', 'VisualFXSetting', 'REG_DWORD', 0), R('HKCU\\Control Panel\\Desktop\\WindowMetrics', 'MinAnimate', 'REG_SZ', 1), R(CU + 'Explorer\\Advanced', 'TaskbarAnimations', 'REG_DWORD', 1), R(CU + 'Explorer\\Advanced', 'ListviewAlphaSelect', 'REG_DWORD', 1), R(CU + 'Explorer\\Advanced', 'ListviewShadow', 'REG_DWORD', 1), R('HKCU\\Software\\Microsoft\\Windows\\DWM', 'EnableAeroPeek', 'REG_DWORD', 1)] },
+  { id: 'services', fps: 1, n: 'Desligar Serviços Pouco Usados', d: 'Desativa Fax, Registro Remoto, Mapas, Modo Demonstração, Relatório de Erros e telemetria (DiagTrack).', c: ['Desempenho', 'Privacidade'],
+    on: ['sc config DiagTrack start= disabled', 'sc stop DiagTrack & exit 0', 'sc config Fax start= disabled & exit 0', 'sc config RemoteRegistry start= disabled & exit 0', 'sc config MapsBroker start= disabled & exit 0', 'sc config RetailDemo start= disabled & exit 0', 'sc config dmwappushservice start= disabled & exit 0', 'sc config WerSvc start= disabled & exit 0'],
+    off: ['sc config DiagTrack start= auto', 'sc config Fax start= demand & exit 0', 'sc config RemoteRegistry start= disabled & exit 0', 'sc config MapsBroker start= delayed-auto & exit 0', 'sc config RetailDemo start= demand & exit 0', 'sc config dmwappushservice start= demand & exit 0', 'sc config WerSvc start= demand & exit 0'] },
 ];
 
 let restoreMade = false, sysCache;
@@ -86,7 +92,7 @@ async function apply(ids, enable) {
 
 ipcMain.handle('init', async () => ({
   brand: BRAND, discord: !!DISCORD, user: os.userInfo().username, ver: app.getVersion(),
-  tweaks: T.map(({ id, n, d, c, star }) => ({ id, n, d, c, star })),
+  tweaks: T.map(({ id, n, d, c, star, fps }) => ({ id, n, d, c, star, fps })),
   applied: (load().applied || []).filter(id => T.some(t => t.id === id)), lastClean: load().lastClean || null,
   admin: await run('net session >nul 2>&1'), sys: await sys(),
 }));
@@ -179,7 +185,77 @@ ipcMain.handle('elevate', () => new Promise(res => {
   const cmd = `Start-Process -FilePath ${q(exe)} ${args.length ? '-ArgumentList ' + args.map(q).join(',') + ' ' : ''}-Verb RunAs`;
   execFile('powershell', ['-NoProfile', '-Command', cmd], { windowsHide: true }, err => { if (!err) app.quit(); res(!err); });
 }));
-ipcMain.handle('theme', (e, c) => { try { if (/^#[0-9a-f]{6}$/i.test(c)) BrowserWindow.fromWebContents(e.sender).setTitleBarOverlay({ color: '#07060b', symbolColor: c, height: 36 }); } catch {} });
+ipcMain.handle('theme', (e, o) => { try { const ok = /^#[0-9a-f]{6}$/i, w = BrowserWindow.fromWebContents(e.sender); if (o && ok.test(o.bg) && ok.test(o.sym)) { w.setTitleBarOverlay({ color: o.bg, symbolColor: o.sym, height: 36 }); w.setBackgroundColor(o.bg); } } catch {} });
+const out = (c, a) => new Promise(r => execFile(c, a, { windowsHide: true, maxBuffer: 1 << 24 }, (e, o) => r(e ? '' : String(o))));
+ipcMain.handle('health', async () => {
+  const mr = await ps("@(Get-CimInstance Win32_PhysicalMemory|Select-Object Capacity,Speed,ConfiguredClockSpeed,SMBIOSMemoryType)|ConvertTo-Json -Compress");
+  const gr = await ps("@(Get-CimInstance Win32_VideoController|Select-Object Name,DriverVersion)|ConvertTo-Json -Compress");
+  let mods = [], gpus = [];
+  try { mods = JSON.parse(mr.out); if (!Array.isArray(mods)) mods = [mods]; } catch {}
+  try { gpus = JSON.parse(gr.out); if (!Array.isArray(gpus)) gpus = [gpus]; } catch {}
+  const rated = Math.max(0, ...mods.map(x => x.Speed || 0)), running = Math.max(0, ...mods.map(x => x.ConfiguredClockSpeed || 0));
+  const type = { 24: 'DDR3', 26: 'DDR4', 34: 'DDR5' }[(mods[0] || {}).SMBIOSMemoryType] || '';
+  const jedec = { DDR3: 1600, DDR4: 2666, DDR5: 4800 }[type] || 0;
+  let xmp = 'unknown';
+  if (rated && running) xmp = running < rated * 0.97 ? 'off' : (jedec && rated <= jedec ? 'jedec' : 'on');
+  const mem = { count: mods.length, gb: Math.round(mods.reduce((s, x) => s + (x.Capacity || 0), 0) / 2 ** 30), type, rated, running, xmp };
+  const dg = gpus.find(g => /rtx|gtx|geforce|radeon rx|radeon pro|\barc\b|quadro|titan/i.test(g.Name || ''));
+  const g0 = dg || gpus[0] || {};
+  const gpu = { name: g0.Name || '', driver: g0.DriverVersion || '', state: 'none', vendor: '' };
+  if (dg) {
+    if (/rtx|gtx|geforce|quadro|titan/i.test(dg.Name)) {
+      gpu.vendor = 'nvidia';
+      let t = await out('nvidia-smi', ['-q', '-d', 'MEMORY']);
+      if (!t) t = await out('C:\\Program Files\\NVIDIA Corporation\\NVSMI\\nvidia-smi.exe', ['-q', '-d', 'MEMORY']);
+      const b = t.match(/BAR1 Memory Usage[\s\S]*?Total\s*:\s*(\d+)\s*MiB/i);
+      gpu.state = b ? (+b[1] > 256 ? 'on' : 'off') : 'unknown';
+    } else { gpu.vendor = 'other'; gpu.state = 'unknown'; }
+  }
+  return { mem, gpu };
+});
+const BLOAT = [
+  { id: 'news', p: ['Microsoft.BingNews'], n: 'Notícias', d: 'App de notícias da Microsoft.' },
+  { id: 'weather', p: ['Microsoft.BingWeather'], n: 'Clima', d: 'App de previsão do tempo.' },
+  { id: 'officehub', p: ['Microsoft.MicrosoftOfficeHub'], n: 'Microsoft 365 (Office Hub)', d: 'Atalho para o Office com anúncios de assinatura.' },
+  { id: 'solitaire', p: ['Microsoft.MicrosoftSolitaireCollection'], n: 'Solitaire Collection', d: 'Jogos de cartas com anúncios.' },
+  { id: 'candy', p: ['king.com.*'], n: 'Candy Crush e similares', d: 'Jogos que vêm pré-instalados em alguns PCs.' },
+  { id: 'teams', p: ['MicrosoftTeams', 'MSTeams'], n: 'Microsoft Teams (pessoal)', d: 'Versão pessoal do Teams que vem no Windows 11.' },
+  { id: 'cortana', p: ['Microsoft.549981C3F5F10'], n: 'Cortana', d: 'Assistente antigo da Microsoft.' },
+  { id: 'phone', p: ['Microsoft.YourPhone'], n: 'Vincular ao Celular', d: 'Conecta o PC ao celular (Phone Link).' },
+  { id: 'clipchamp', p: ['Clipchamp.Clipchamp'], n: 'Clipchamp', d: 'Editor de vídeo da Microsoft.' },
+  { id: 'mr', p: ['Microsoft.MixedReality.Portal'], n: 'Portal de Realidade Mista', d: 'Só serve para headsets de realidade mista.' },
+  { id: '3d', p: ['Microsoft.Microsoft3DViewer', 'Microsoft.Print3D'], n: 'Visualizador 3D e Print 3D', d: 'Apps 3D que quase ninguém usa.' },
+  { id: 'feedback', p: ['Microsoft.WindowsFeedbackHub'], n: 'Hub de Comentários', d: 'Envia feedback à Microsoft.' },
+  { id: 'help', p: ['Microsoft.GetHelp', 'Microsoft.Getstarted'], n: 'Obter Ajuda e Dicas', d: 'Apps de suporte e dicas do Windows.' },
+  { id: 'maps', p: ['Microsoft.WindowsMaps'], n: 'Mapas', d: 'App de mapas do Windows.' },
+  { id: 'people', p: ['Microsoft.People'], n: 'Pessoas', d: 'Contatos do Windows.' },
+  { id: 'skype', p: ['Microsoft.SkypeApp'], n: 'Skype', d: 'Mensageiro antigo da Microsoft.' },
+  { id: 'mail', p: ['microsoft.windowscommunicationsapps'], n: 'Email e Calendário', d: 'Remova só se você usa outro programa de email.' },
+  { id: 'media', p: ['Microsoft.ZuneMusic', 'Microsoft.ZuneVideo'], n: 'Media Player e Filmes e TV', d: 'Players de mídia da Microsoft.' },
+  { id: 'todo', p: ['Microsoft.Todos'], n: 'Microsoft To Do', d: 'App de lista de tarefas.' },
+  { id: 'pad', p: ['Microsoft.PowerAutomateDesktop'], n: 'Power Automate', d: 'Automação de tarefas.' },
+  { id: 'social', p: ['*Disney*', '*TikTok*', '*Facebook*', '*Instagram*', '*Netflix*', '*AmazonPrimeVideo*', '*LinkedIn*'], n: 'Apps de terceiros (Disney+, TikTok, Netflix...)', d: 'Apps que alguns PCs trazem instalados de fábrica.' },
+];
+const wild = p => new RegExp('^' + p.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*') + '$', 'i');
+ipcMain.handle('bloat:list', async () => {
+  const r = await ps("$ErrorActionPreference='Stop';try{(Get-AppxPackage -AllUsers).Name}catch{(Get-AppxPackage).Name}");
+  const names = r.out.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+  return BLOAT.filter(b => b.p.some(p => names.some(n => wild(p).test(n)))).map(({ id, n, d }) => ({ id, n, d }));
+});
+ipcMain.handle('bloat:remove', async (_e, ids) => {
+  const res = {};
+  for (const id of ids || []) {
+    const b = BLOAT.find(x => x.id === id); if (!b) continue;
+    let ok = true;
+    for (const p of b.p) {
+      const q = p.replace(/'/g, "''");
+      const r = await ps(`$n='${q}';try{Get-AppxPackage -AllUsers -Name $n -ErrorAction Stop|Remove-AppxPackage -AllUsers -ErrorAction Stop}catch{Get-AppxPackage -Name $n|Remove-AppxPackage -ErrorAction SilentlyContinue};try{Get-AppxProvisionedPackage -Online|Where-Object{$_.DisplayName -like $n}|Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue|Out-Null}catch{};$c=@(try{Get-AppxPackage -AllUsers -Name $n -ErrorAction Stop}catch{Get-AppxPackage -Name $n}).Count;if($c -gt 0){exit 1}`);
+      ok = ok && r.ok;
+    }
+    res[id] = ok;
+  }
+  return res;
+});
 ipcMain.handle('link', () => DISCORD && shell.openExternal(DISCORD));
 
 app.whenReady().then(() => {

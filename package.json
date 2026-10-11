@@ -1,6 +1,6 @@
 {
   "name": "luquinhas-boost",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -16,10 +16,22 @@
     "win": {
       "icon": "icon.ico",
       "target": [
-        "nsis",
-        "portable"
+        "nsis"
       ],
       "requestedExecutionLevel": "asInvoker"
+    },
+    "copyright": "Luquinhas Boost",
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false,
+      "createDesktopShortcut": "always",
+      "createStartMenuShortcut": true,
+      "shortcutName": "Luquinhas Boost",
+      "runAfterFinish": true
     }
-  }
+  },
+  "description": "Otimizador e limpeza do Windows para CS2",
+  "author": "Luquinhas",
+  "homepage": "https://github.com/lucasschwerz/luquinhas-boost"
 }
