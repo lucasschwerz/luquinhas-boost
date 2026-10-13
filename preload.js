@@ -17,5 +17,12 @@ contextBridge.exposeInMainWorld('api', {
   health: () => r.invoke('health'),
   bloatList: () => r.invoke('bloat:list'),
   bloatRemove: ids => r.invoke('bloat:remove', ids),
+  tweaksState: () => r.invoke('tweaks:state'),
+  autoGet: () => r.invoke('auto:get'), autoSet: p => r.invoke('auto:set', p), autoRun: () => r.invoke('auto:run'),
+  hubList: () => r.invoke('hub:list'), hubInstall: id => r.invoke('hub:install', id), hubOpen: id => r.invoke('hub:open', id),
+  driversScan: () => r.invoke('drivers:scan'), driversWU: () => r.invoke('drivers:wu'), driversOpen: k => r.invoke('drivers:open', k),
+  healthFull: () => r.invoke('health:full'), onHealth: f => r.on('health:progress', (_e, d) => f(d)),
+  updInfo: () => r.invoke('update:info'), updInstall: () => r.invoke('update:install'), updApply: () => r.invoke('update:apply'), updCancel: () => r.invoke('update:cancel'), onUpd: f => r.on('upd:progress', (_e, d) => f(d)),
+  iconsGet: ids => r.invoke('icons:get', ids),
   link: () => r.invoke('link'),
 });
