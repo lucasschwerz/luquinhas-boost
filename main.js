@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain, shell, dialog, clipboard } = require('electron');
 const path = require('path'), fs = require('fs'), os = require('os');
-const { exec, execFile } = require('child_process');
+const { exec, execFile, spawn } = require('child_process');
 
 const BRAND = 'Luquinhas Boost';
 const GITHUB_REPO = 'lucasschwerz/luquinhas-boost'; // usuario/repositorio do GitHub (aviso de atualizacao)
@@ -151,7 +151,7 @@ const T = [
 let restoreMade = false, sysCache;
 async function sys() {
   if (sysCache) return sysCache;
-  const r = await ps("$d=Get-CimInstance Win32_DiskDrive|select -First 1;$o=Get-CimInstance Win32_OperatingSystem;@{gpu=(Get-CimInstance Win32_VideoController|select -First 1).Name;disk=$d.Model;size=[math]::Round($d.Size/1GB);os=$o.Caption;ver=$o.Version;rams=@(Get-CimInstance Win32_PhysicalMemory|Select-Object SMBIOSMemoryType,Speed,ConfiguredClockSpeed)}|ConvertTo-Json -Depth 3 -Compress");
+  const r = await ps("$d=Get-CimInstance Win32_DiskDrive|select -First 1;$o=Get-CimInstance Win32_OperatingSystem;$cp=Get-CimInstance Win32_Processor|select -First 1;$v=0;Get-ChildItem 'HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11cd-bfc1-08002be10318}' -ErrorAction SilentlyContinue|ForEach-Object{$m=(Get-ItemProperty $_.PSPath -ErrorAction SilentlyContinue).'HardwareInformation.qwMemorySize';if($m -is [byte[]]){$m=[BitConverter]::ToInt64($m,0)};if($m -gt $v){$v=$m}};$pd=Get-PhysicalDisk -ErrorAction SilentlyContinue|select -First 1;$dt=if($pd.BusType -eq 'NVMe'){'NVMe'}else{[string]$pd.MediaType};$dv=(Get-ItemProperty 'HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion').DisplayVersion;@{pcores=$cp.NumberOfCores;vram=[math]::Round($v/1GB);dtype=$dt;dver=$dv;gpu=(Get-CimInstance Win32_VideoController|select -First 1).Name;disk=$d.Model;size=[math]::Round($d.Size/1GB);os=$o.Caption;ver=$o.Version;rams=@(Get-CimInstance Win32_PhysicalMemory|Select-Object SMBIOSMemoryType,Speed,ConfiguredClockSpeed)}|ConvertTo-Json -Depth 3 -Compress");
   let j = {}; try { j = JSON.parse(r.out); } catch {}
   const rs = [].concat(j.rams || []), TY = { 24: 'DDR3', 26: 'DDR4', 29: 'LPDDR3', 30: 'LPDDR4', 34: 'DDR5', 35: 'LPDDR5' };
   const rated = Math.max(0, ...rs.map(x => x.Speed || 0)), run = Math.max(0, ...rs.map(x => x.ConfiguredClockSpeed || 0)) || rated;
@@ -187,9 +187,30 @@ ipcMain.handle('init', async () => ({
   brand: BRAND, discord: !!DISCORD, user: os.userInfo().username, ver: app.getVersion(),
   tweaks: T.map(({ id, n, d, c, star, fps, danger, admin, reboot, warn }) => ({ id, n, d, c, star, fps, danger, admin, reboot, warn })),
   applied: (load().applied || []).filter(id => T.some(t => t.id === id)), lastClean: load().lastClean || null,
-  admin: await run('net session >nul 2>&1'), sys: await sys(),
+  admin: await run('net session >nul 2>&1'), alwaysAdmin: !!load().alwaysAdmin, up: os.uptime(), sys: await sys(),
 }));
 ipcMain.handle('tweaks', (_e, ids, en) => apply(ids, en));
+function walk(p, st) {
+  let s; try { s = fs.lstatSync(p); } catch { return; }
+  if (s.isDirectory()) { let l; try { l = fs.readdirSync(p); } catch { return; } for (const f of l) { if (st.n++ > 200000) return; walk(path.join(p, f), st); } }
+  else { st.size += s.size; st.count++; }
+}
+function dirStat(dirs, filter = () => true) {
+  const st = { size: 0, count: 0, n: 0 };
+  for (const d of dirs) { let l; try { l = fs.readdirSync(d); } catch { continue; } for (const f of l) if (filter(f)) walk(path.join(d, f), st); }
+  return { size: st.size, count: st.count };
+}
+// tamanho e quantidade de arquivos de cada item da limpeza (so leitura, nada e apagado)
+ipcMain.handle('clean:scan', async () => {
+  const tick = () => new Promise(r => setImmediate(r)), o = {};
+  o.temp = dirStat([os.tmpdir(), 'C:\\Windows\\Temp']); await tick();
+  o.prefetch = dirStat(['C:\\Windows\\Prefetch']); await tick();
+  o.wu = dirStat(['C:\\Windows\\SoftwareDistribution\\Download']); await tick();
+  o.thumbs = dirStat([path.join(process.env.LOCALAPPDATA || '', 'Microsoft\\Windows\\Explorer')], f => /^thumbcache_.*\.db$/i.test(f)); await tick();
+  o.bin = { size: 0, count: 0 };
+  try { const r = await ps("$b=(New-Object -ComObject Shell.Application).NameSpace(10);$n=0;$s=0;foreach($i in $b.Items()){$n++;$s+=[int64]$i.Size};@{n=$n;s=$s}|ConvertTo-Json -Compress"); const j = JSON.parse(r.out); o.bin = { size: j.s || 0, count: j.n || 0 }; } catch {}
+  return o;
+});
 ipcMain.handle('clean', async (_e, ids) => {
   const res = {}; for (const id of ids) res[id] = clean[id] ? await clean[id]() : false;
   const cfg = load(); cfg.lastClean = Date.now(); save(cfg); return res;
@@ -271,13 +292,30 @@ ipcMain.handle('update', async () => {
   return j && j.tag_name && newer(j.tag_name, app.getVersion()) ? { v: j.tag_name, url: j.html_url } : null;
 });
 ipcMain.handle('open', (_e, u) => /^https:\/\/github\.com\//.test(u) && shell.openExternal(u));
-ipcMain.handle('elevate', () => new Promise(res => {
-  const exe = process.env.PORTABLE_EXECUTABLE_FILE || process.execPath;
-  const args = app.isPackaged ? [] : [app.getAppPath()];
-  const q = s => "'" + s.replace(/'/g, "''") + "'";
-  const cmd = `Start-Process -FilePath ${q(exe)} ${args.length ? '-ArgumentList ' + args.map(q).join(',') + ' ' : ''}-Verb RunAs`;
-  execFile('powershell', ['-NoProfile', '-Command', cmd], { windowsHide: true }, err => { if (!err) app.quit(); res(!err); });
-}));
+// ---------- monitor ao vivo do Painel (só roda enquanto o Painel está aberto) ----------
+let liveT = null, livePS = null, liveCpu = null, liveGD = { gpu: 0, disk: 0 };
+const cpuTimes = () => { let idle = 0, total = 0; for (const c of os.cpus()) { for (const k in c.times) total += c.times[k]; idle += c.times.idle; } return { idle, total }; };
+function liveStop() { if (liveT) clearInterval(liveT); liveT = null; if (livePS) { try { livePS.kill(); } catch {} livePS = null; } }
+function liveStart(wc) {
+  liveStop(); liveCpu = cpuTimes();
+  // GPU e disco vêm de contadores do Windows via CIM (nomes em inglês, funcionam em qualquer idioma do Windows)
+  const script = `$ErrorActionPreference='SilentlyContinue';while($true){$g=0;try{$g=[int](Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine|Group-Object{($_.Name -split 'engtype_')[1]}|ForEach-Object{($_.Group|Measure-Object UtilizationPercentage -Sum).Sum}|Measure-Object -Maximum).Maximum}catch{};$d=0;try{$d=[int](Get-CimInstance Win32_PerfFormattedData_PerfDisk_PhysicalDisk -Filter "Name='_Total'").PercentDiskTime}catch{};[Console]::Out.WriteLine('{"gpu":'+[math]::Min(100,$g)+',"disk":'+[math]::Min(100,$d)+'}');[Console]::Out.Flush();Start-Sleep -Milliseconds 700}`;
+  try {
+    livePS = spawn('powershell', ['-NoProfile', '-NonInteractive', '-Command', script], { windowsHide: true });
+    livePS.stdout.on('data', d => { const l = String(d).trim().split(/\r?\n/).pop(); try { liveGD = JSON.parse(l); } catch {} });
+    livePS.on('error', () => { livePS = null; }); livePS.on('exit', () => { livePS = null; });
+  } catch {}
+  liveT = setInterval(() => {
+    const c = cpuTimes(), dt = c.total - liveCpu.total, di = c.idle - liveCpu.idle; liveCpu = c;
+    const tot = os.totalmem(), used = tot - os.freemem();
+    if (wc.isDestroyed()) return liveStop();
+    wc.send('live:tick', { cpu: dt > 0 ? Math.max(0, Math.min(100, Math.round(100 * (1 - di / dt)))) : 0, ram: Math.round(100 * used / tot), ramUsed: +(used / 2 ** 30).toFixed(1), gpu: liveGD.gpu || 0, disk: liveGD.disk || 0, up: os.uptime() });
+  }, 1000);
+}
+ipcMain.handle('live:start', e => { liveStart(e.sender); return true; });
+ipcMain.handle('live:stop', () => { liveStop(); return true; });
+ipcMain.handle('elevate', () => doElevate());
+ipcMain.handle('adm:set', (_e, on) => { const c = load(); c.alwaysAdmin = !!on; save(c); return c.alwaysAdmin; });
 ipcMain.handle('theme', (e, o) => { try { const ok = /^#[0-9a-f]{6}$/i, w = BrowserWindow.fromWebContents(e.sender); if (o && ok.test(o.bg) && ok.test(o.sym)) { w.setTitleBarOverlay({ color: o.bg, symbolColor: o.sym, height: 36 }); w.setBackgroundColor(o.bg); } } catch {} });
 ipcMain.handle('health', async () => {
   const mr = await ps("@(Get-CimInstance Win32_PhysicalMemory|Select-Object Capacity,Speed,ConfiguredClockSpeed,SMBIOSMemoryType)|ConvertTo-Json -Compress");
@@ -353,23 +391,42 @@ ipcMain.handle('link', () => DISCORD && shell.openExternal(DISCORD));
 let win = null, mod = null;
 function createWindow() {
   if (win && !win.isDestroyed()) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); return win; }
-  win = new BrowserWindow({ width: 1180, height: 740, minWidth: 960, minHeight: 600, backgroundColor: '#07060b', autoHideMenuBar: true, titleBarStyle: 'hidden', titleBarOverlay: { color: '#07060b', symbolColor: '#c4b5fd', height: 36 }, icon: path.join(__dirname, 'icon.png'),
+  win = new BrowserWindow({ width: 1180, height: 740, minWidth: 960, minHeight: 600, backgroundColor: '#0a0a0a', autoHideMenuBar: true, titleBarStyle: 'hidden', titleBarOverlay: { color: '#0a0a0a', symbolColor: '#c4b5fd', height: 36 }, icon: path.join(__dirname, 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true } });
   win.loadFile('index.html'); win.on('closed', () => { win = null; });
   return win;
 }
+// Reabre o programa como administrador (UAC). Se der certo, grava "sempre administrador" e fecha esta instancia.
+let adminNow = false;
+function doElevate() {
+  return new Promise(res => {
+    const exe = process.env.PORTABLE_EXECUTABLE_FILE || process.execPath;
+    const args = [...(app.isPackaged ? [] : [app.getAppPath()]), ...(process.argv.includes('--hidden') ? ['--hidden'] : [])];
+    const q = x => "'" + x.replace(/'/g, "''") + "'";
+    const cmd = `Start-Process -FilePath ${q(exe)} ${args.length ? '-ArgumentList ' + args.map(q).join(',') + ' ' : ''}-Verb RunAs`;
+    app.releaseSingleInstanceLock(); // a nova instancia (administrador) precisa conseguir o lock
+    execFile('powershell', ['-NoProfile', '-Command', cmd], { windowsHide: true }, err => {
+      if (err) { app.requestSingleInstanceLock(); return res(false); } // UAC recusado: segue como esta
+      const c = load(); c.alwaysAdmin = true; save(c);
+      app.quit(); res(true);
+    });
+  });
+}
 if (!app.requestSingleInstanceLock()) app.quit();
 else {
   app.on('second-instance', () => createWindow());
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
     app.setAppUserModelId('com.luquinhas.boost');
-    mod = require('./modules')({ runx, ps, out, load, save, log, clean, regGet, getJSON, newer, GITHUB_REPO, cs2CfgDir, showWindow: createWindow, isQuitting: () => quitting });
+    adminNow = await run('net session >nul 2>&1');
+    // depois da 1a vez que o usuario pediu administrador, abre sempre como administrador
+    if (!adminNow && load().alwaysAdmin && await doElevate()) return;
+    mod = require('./modules')({ runx, ps, out, load, save, log, clean, regGet, getJSON, newer, GITHUB_REPO, cs2CfgDir, showWindow: createWindow, isQuitting: () => quitting, isAdmin: () => adminNow });
     mod.start();
-    if (!(process.argv.includes('--hidden') && mod.monitorOn())) createWindow();
+    if (!process.argv.includes('--hidden')) createWindow();
   });
 }
 let quitting = false;
-app.on('before-quit', () => { quitting = true; });
+app.on('before-quit', () => { quitting = true; liveStop(); });
 // Fechar a janela NAO encerra o programa: ele continua na bandeja (setinha perto do relogio).
 // Para fechar de verdade: botao direito no icone da bandeja -> Encerrar.
-app.on('window-all-closed', () => { if (!mod) return app.quit(); if (!quitting) mod.onHidden(); });
+app.on('window-all-closed', () => { liveStop(); if (!mod) return app.quit(); if (!quitting) mod.onHidden(); });

@@ -2,7 +2,7 @@ const { contextBridge, ipcRenderer: r } = require('electron');
 contextBridge.exposeInMainWorld('api', {
   init: () => r.invoke('init'),
   tweaks: (ids, en) => r.invoke('tweaks', ids, en),
-  clean: ids => r.invoke('clean', ids),
+  clean: ids => r.invoke('clean', ids), cleanScan: () => r.invoke('clean:scan'), liveStart: () => r.invoke('live:start'), liveStop: () => r.invoke('live:stop'), onLive: f => r.on('live:tick', (_e, d) => f(d)), admSet: on => r.invoke('adm:set', on),
   restore: a => r.invoke('restore', a),
   appsList: () => r.invoke('apps:list'),
   appsUninstall: ids => r.invoke('apps:uninstall', ids),

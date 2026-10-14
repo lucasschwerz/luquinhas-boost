@@ -32,7 +32,6 @@ module.exports = function (X) {
   }
   function setupMonitor() {
     const a = autoGet(), on = a.freq !== 'never';
-    try { app.setLoginItemSettings({ openAtLogin: !!(a.startup && on), args: ['--hidden'] }); } catch {}
     ensureTray(); // a bandeja existe sempre; so o agendamento da limpeza depende da frequencia
     if (!on) { if (timer) { clearInterval(timer); timer = null; } return; }
     if (!timer) timer = setInterval(checkDue, 30 * 60 * 1000);
@@ -42,8 +41,28 @@ module.exports = function (X) {
     const c = load(); if (c.trayHint) return; c.trayHint = true; save(c);
     try { new Notification({ title: 'Luquinhas Boost', body: 'O programa continua em segundo plano na bandeja (perto do relógio). Para fechar de vez: botão direito no ícone → Encerrar.' }).show(); } catch {}
   }
+  // ---------- Iniciar com o Windows ----------
+  // Como administrador usa uma tarefa agendada (abre elevado no logon, sem pedir UAC); sem admin usa o item de inicialização comum.
+  const TASK = 'LuquinhasBoost', qps = x => "'" + String(x).replace(/'/g, "''") + "'", selfExe = () => process.env.PORTABLE_EXECUTABLE_FILE || process.execPath;
+  const hasTask = async () => (await ps(`if(Get-ScheduledTask -TaskName '${TASK}' -ErrorAction SilentlyContinue){'1'}`)).out.trim() === '1';
+  async function applyStartup() {
+    const want = !!autoGet().startup, adm = X.isAdmin ? !!X.isAdmin() : false, canTask = app.isPackaged && process.platform === 'win32';
+    let task = canTask ? await hasTask() : false, note = '';
+    if (canTask) {
+      const c = load();
+      if (want && adm && (!task || c.startupExe !== selfExe())) {
+        const r = await ps(`$u="$env:USERDOMAIN\\$env:USERNAME";$a=New-ScheduledTaskAction -Execute ${qps(selfExe())} -Argument '--hidden';$t=New-ScheduledTaskTrigger -AtLogOn -User $u;$t.Delay='PT20S';$p=New-ScheduledTaskPrincipal -UserId $u -LogonType Interactive -RunLevel Highest;$s=New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit ([TimeSpan]::Zero);Register-ScheduledTask -TaskName '${TASK}' -Action $a -Trigger $t -Principal $p -Settings $s -Force -ErrorAction Stop | Out-Null`);
+        task = r.ok && await hasTask(); if (task) { c.startupExe = selfExe(); save(c); }
+      } else if (!want && task) {
+        if (adm) { await ps(`Unregister-ScheduledTask -TaskName '${TASK}' -Confirm:$false -ErrorAction SilentlyContinue`); task = await hasTask(); }
+        if (task) note = 'Para desativar por completo, abra o programa como administrador e desligue de novo.';
+      }
+    }
+    try { app.setLoginItemSettings({ openAtLogin: want && !task, args: ['--hidden'] }); } catch {}
+    return { task, note };
+  }
   ipcMain.handle('auto:get', () => autoGet());
-  ipcMain.handle('auto:set', (_e, p) => {
+  ipcMain.handle('auto:set', async (_e, p) => {
     const prev = autoGet(), n = { ...prev };
     if (p && ['never', 'daily', 'weekly', 'monthly'].includes(p.freq)) n.freq = p.freq;
     if (p && Array.isArray(p.items)) n.items = p.items.filter(i => ITEMS.includes(i) && i !== 'bin');
@@ -51,7 +70,9 @@ module.exports = function (X) {
     if (p && typeof p.startup === 'boolean') n.startup = p.startup;
     n.items = n.items.filter(i => i !== 'bin'); if (n.binAuth) n.items.push('bin');
     if (prev.freq === 'never' && n.freq !== 'never') n.last = Date.now();
-    const c = load(); c.auto = n; save(c); setupMonitor(); return autoGet();
+    const c = load(); c.auto = n; save(c); setupMonitor();
+    const note = p && typeof p.startup === 'boolean' ? (await applyStartup()).note : '';
+    return { ...autoGet(), startupNote: note };
   });
   ipcMain.handle('auto:run', () => runAuto());
 
@@ -341,5 +362,5 @@ module.exports = function (X) {
   ipcMain.handle('update:apply', () => { if (!pending || !fs.existsSync(pending.dest)) return false; spawn(pending.dest, [], { detached: true, stdio: 'ignore' }).unref(); setTimeout(() => app.quit(), 600); return true; });
   ipcMain.handle('update:cancel', () => { if (pending) { try { fs.rmSync(pending.dir, { recursive: true, force: true }); } catch {} pending = null; } return true; });
 
-  return { monitorOn, onHidden, start: () => { setupMonitor(); setTimeout(checkDue, 60000); loadIconCache(); setTimeout(warmIcons, 1500); } };
+  return { monitorOn, onHidden, start: () => { setupMonitor(); applyStartup().catch(() => {}); setTimeout(checkDue, 60000); loadIconCache(); setTimeout(warmIcons, 1500); } };
 };
