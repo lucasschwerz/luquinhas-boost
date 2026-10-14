@@ -277,6 +277,17 @@ html[data-mode=light] .hban,html[data-mode=light] .hdual>.card,html[data-mode=li
 @media(prefers-reduced-motion:reduce){.orb i{animation:none}}`;
   document.head.append(s);
 })();
+// ---------- aba ativa do menu: pílula #1B1B1B com barra de destaque colada na esquerda ----------
+(function () {
+  const s = document.createElement('style');
+  s.textContent = `
+#nav #ind{left:0!important;top:7px;width:3px;height:22px!important;z-index:2;border-radius:0 3px 3px 0;background:var(--ac);box-shadow:0 0 10px rgba(var(--acrgb),.65)}
+#nav .nv{border:1px solid transparent}
+html:not([data-mode=light]) #nav .nv.on{background:#1B1B1B!important;border-color:rgba(255,255,255,.08)!important;color:#fff!important;font-weight:600}
+html:not([data-mode=light]) #nav .nv.on svg,html:not([data-mode=light]) #nav .nv.on .cs2i{color:#fff!important}
+html[data-mode=light] #nav .nv.on{border-color:rgba(0,0,0,.06)}`;
+  document.head.append(s);
+})();
 PG.health = () => {
   const st = S.hscan ? ['run', 'Analisando...'] : S.hres ? ['ok', 'Análise concluída'] : ['idle', 'Pronto para analisar'];
   return `<div class="opH st"><div class="opT"><span class="ptile">${ico('pulse')}</span><div><h1>Saúde do PC</h1><p class="mu">Análise de BIOS e hardware, compatível com o seu equipamento</p></div></div><span class="stp ${st[0]}" id="hst"><i></i>${st[1]}</span></div>
@@ -293,9 +304,12 @@ async function hScan() {
 }
 function hRender() {
   const r = S.hres, b = $('#hbody'); if (!b) return; if (!r) { b.innerHTML = ''; return; }
-  const SRC = { windows: 'Detectado pelo Windows', estimate: 'Estimado a partir de dados do Windows', bios: 'Exige consultar a BIOS' }, ST = { on: 'Ativado', off: 'Desativado', unknown: 'Desconhecido' };
-  b.innerHTML = ['windows', 'estimate', 'bios'].map(k => { const l = r.items.filter(x => x.src === k); return l.length ? `<h3 style="margin:18px 0 10px">${SRC[k]}</h3><div class="hgrid">${l.map((x, i) => `<div class="card st hc" style="--i:${i}"><div class="top"><h3>${esc(x.title)}</h3><span class="bd ${x.state === 'on' ? 'ok' : x.state === 'off' ? 'warn' : 'unk'}">${ST[x.state]}</span></div><p>${esc(x.ev)}</p>${x.adv ? `<small>${esc(x.adv)}</small>` : ''}</div>`).join('')}</div>` : ''; }).join('')
-    + `<p class="mu sm" style="margin-top:14px">Análise de ${new Date(r.when).toLocaleString(LOC())}. Nenhuma configuração foi alterada.</p>`;
+  const SRC = { windows: 'Detectado pelo Windows', estimate: 'Estimado a partir de dados do Windows', bios: 'Exige consultar a BIOS' }, ST = { on: 'Ativado', off: 'Desativado', unknown: 'Desconhecido' }, SI = { on: 'okc', off: 'warn', unknown: 'unk' };
+  const cnt = s => r.items.filter(x => x.state === s).length, un = r.items.length - cnt('on') - cnt('off');
+  const tile = x => { const s = ST[x.state] ? x.state : 'unknown'; return `<div class="ht ${s}" data-hx title="${esc(x.ev || '')}"><span class="hti">${ico(SI[s])}</span><b>${esc(x.title)}</b><span class="hts"><i></i>${ST[s]}</span>${x.ev || x.adv ? `<div class="htd">${x.ev ? `<p>${esc(x.ev)}</p>` : ''}${x.adv ? `<small>${esc(x.adv)}</small>` : ''}</div>` : ''}</div>`; };
+  b.innerHTML = `<div class="hres st"><div class="hsum"><span class="hsi">${ico('okc')}</span><div class="hsx"><b>Resultado da análise</b><small>${r.items.length} ${r.items.length === 1 ? 'item verificado' : 'itens verificados'} neste equipamento. Clique em um item para ver os detalhes.</small></div><div class="hch"><span class="hcp on"><i></i>${cnt('on')} ${tr('Ativado')}</span><span class="hcp off"><i></i>${cnt('off')} ${tr('Desativado')}</span>${un ? `<span class="hcp unk"><i></i>${un} ${tr('Desconhecido')}</span>` : ''}</div></div>`
+    + ['windows', 'estimate', 'bios'].map(k => { const l = r.items.filter(x => x.src === k); return l.length ? `<div class="hsec"><span>${SRC[k]}</span><em>${l.length}</em></div><div class="hg">${l.map(tile).join('')}</div>` : ''; }).join('')
+    + `<p class="hft">Análise de ${new Date(r.when).toLocaleString(LOC())}. Nenhuma configuração foi alterada.</p></div>`;
   i18n(b);
 }
 
@@ -393,9 +407,9 @@ PG.clean = () => {
   const lc = S.lastClean ? new Date(S.lastClean).toLocaleString(LOC(), { dateStyle: 'short', timeStyle: 'short' }) : tr('nunca'), n = cl.size, fq = (S.auto && S.auto.freq) || 'never';
   return `<div class="opH st"><div class="opT"><span class="ptile">${ico('trash')}</span><div><h1>Limpeza do Sistema</h1><p class="mu">Libere espaço apagando arquivos temporários e lixo acumulado do sistema</p></div></div></div>
 <div class="csum st"><div class="cin"><div class="cst"><div class="cs1"><span class="mi">${ico('disk')}</span><div><b id="cs-size">—</b><small>Espaço recuperável</small></div></div><div class="cs1"><span class="mi">${ico('file')}</span><div><b id="cs-cnt">—</b><small>Arquivos encontrados</small></div></div><div class="cs1"><span class="mi">${ico('clock')}</span><div><b>${esc(lc)}</b><small>Última limpeza</small></div></div></div>
-<div class="crow"><span class="mi">${ico('trash')}</span><div class="cx"><b id="csel">${n ? (n === 1 ? '1 item selecionado' : tf('{0} itens selecionados', n)) : 'Nenhum item selecionado'}</b><small>Marque o que quer limpar, ou limpe tudo de uma vez</small></div>${S.auto ? `<select class="osel" id="arep">${[['never', 'Nunca'], ['daily', 'Todo dia'], ['weekly', 'Toda semana'], ['monthly', 'Todo mês']].map(([k, v]) => `<option value="${k}" ${k === fq ? 'selected' : ''}>${tr('Repetir')}: ${tr(v)}</option>`).join('')}</select>` : ''}<button class="btn cmain" id="${n ? 'doclean' : 'cleanall'}">${n ? tr('Limpar Selecionados') : tr('Limpar Tudo')}</button></div></div>
+<div class="crow"><span class="mi">${ico('trash')}</span><div class="cx"><b id="csel">${n ? (n === 1 ? '1 item selecionado' : tf('{0} itens selecionados', n)) : 'Nenhum item selecionado'}</b><small>Marque o que quer limpar, ou limpe tudo de uma vez</small></div>${S.auto ? `<button type="button" class="osel arbtn" id="arbtn">${tr('Repetir')}: ${tr((AU_FREQ.find(f => f[0] === fq) || AU_FREQ[0])[1])}${ico('chev')}</button>` : ''}<button class="btn cmain" id="${n ? 'doclean' : 'cleanall'}">${n ? tr('Limpar Selecionados') : tr('Limpar Tudo')}</button></div></div>
 <div class="orb"><i></i><i></i><i></i><span class="dot"></span><span class="dot d2"></span><span class="oc">${ico('trash')}</span></div></div>
-<div class="cgrid">${CLEAN.map(([id, , d, i]) => `<div class="ccard st ${cl.has(id) ? 'on' : ''}" data-clc="${id}"><span class="cbx"></span><span class="cic">${ico(CL_UI[id][1])}</span><b>${CL_UI[id][0]}</b><p>${d}</p><div class="cft"><code class="csz" data-sz="${id}">—</code>${id === 'bin' ? `<button class="dgi" data-tip="${esc(i)}">${ico('warn')}</button>` : ''}</div></div>`).join('')}</div>` + autoCard();
+<div class="cgrid">${CLEAN.map(([id, , d, i]) => `<div class="ccard st ${cl.has(id) ? 'on' : ''}" data-clc="${id}"><span class="cbx"></span><span class="cic">${ico(CL_UI[id][1])}</span><b>${CL_UI[id][0]}</b><p>${d}</p><div class="cft"><code class="csz" data-sz="${id}">—</code>${id === 'bin' ? `<button class="dgi" data-tip="${esc(i)}">${ico('warn')}</button>` : ''}</div></div>`).join('')}</div>`;
 };
 function cleanSel() {
   const n = cl.size, t = $('#csel'), b = $('.cmain'); if (t) t.textContent = n ? (n === 1 ? tr('1 item selecionado') : tf('{0} itens selecionados', n)) : tr('Nenhum item selecionado');
@@ -550,3 +564,98 @@ html:not([data-mode=light]) .nv.on{background:#000;font-weight:600}html:not([dat
 .spill{background:var(--card);border-color:var(--line)}`;
   document.head.append(s);
 })();
+
+// ---------- Saúde do PC (resultados compactos) + Limpeza (menu de automação) ----------
+IC.okc = 'M5 12.5l4.5 4.5L19 7.5'; IC.unk = 'M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01'; IC.chev = 'M6 9l6 6 6-6';
+(function () {
+  const s = document.createElement('style');
+  s.textContent = `
+/* ---- Saúde do PC: resultados ---- */
+.hres{margin-top:14px;padding:16px;border:1px solid var(--line);border-radius:16px;background:var(--card)}
+.hsum{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.hsi{width:40px;height:40px;flex:none;border-radius:50%;display:grid;place-items:center;color:var(--ok);background:rgba(52,211,153,.14);border:1px solid rgba(52,211,153,.4)}.hsi svg{width:20px;height:20px}
+.hsx{flex:1;min-width:200px}.hsx b{display:block;font-size:15px}.hsx small{color:var(--mu);font-size:12px}
+.hch{display:flex;gap:8px;flex-wrap:wrap}
+.hcp{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:99px;font-size:12px;font-weight:600;background:var(--alt);color:var(--mu)}.hcp i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.hcp.on{color:var(--ok);background:rgba(52,211,153,.13)}.hcp.off{color:#d99a06;background:rgba(251,191,36,.14)}
+.hsec{display:flex;align-items:center;gap:8px;margin:16px 2px 8px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mu);font-weight:600}
+.hsec em{font-style:normal;font-size:11px;padding:1px 7px;border-radius:99px;background:var(--alt)}
+.hg{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:8px}
+.ht{display:grid;grid-template-columns:30px 1fr;column-gap:10px;row-gap:2px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--hov2);cursor:pointer;transition:border-color .2s,background .2s}
+.ht:hover{border-color:rgba(var(--acrgb),.4);background:var(--hov)}
+.ht .hti{grid-row:span 2;width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:rgba(var(--acrgb),.14);color:var(--ac)}.ht .hti svg{width:16px;height:16px}
+.ht b{font-size:12.5px;font-weight:600;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ht .hts{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--mu)}.ht .hts i{width:5px;height:5px;border-radius:50%;background:currentColor}
+.ht.on .hts{color:var(--ok)}.ht.on .hti{background:rgba(52,211,153,.14);color:var(--ok)}
+.ht.off .hts{color:#d99a06}.ht.off .hti{background:rgba(251,191,36,.14);color:#d99a06}
+.ht.unknown .hti{background:var(--alt);color:var(--mu)}
+.ht .htd{display:none;grid-column:1/-1;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+.ht .htd p{margin:0;font-size:12px;line-height:1.5}.ht .htd small{display:block;margin-top:4px;color:var(--mu);font-size:11.5px;line-height:1.45}
+.ht.open{grid-column:span 2}.ht.open .htd{display:block}.ht.open b{white-space:normal}
+.hft{margin:14px 2px 0;color:var(--mu);font-size:12px}
+/* ---- Limpeza: botão e menu de automação ---- */
+.arbtn{display:inline-flex;align-items:center;gap:10px;cursor:pointer;border-color:rgba(var(--acrgb),.35)}
+.arbtn svg{width:14px;height:14px;transition:transform .2s}.arbtn.open svg{transform:rotate(180deg)}
+.arp{position:fixed;z-index:60;width:290px;overflow:auto;padding:12px;border-radius:14px;border:1px solid var(--line);background:linear-gradient(var(--hov),var(--hov)),var(--elev);box-shadow:0 22px 50px -10px var(--shadow),0 0 0 1px rgba(var(--acrgb),.12)}
+.arp h4{display:flex;align-items:center;gap:8px;margin:2px 0 8px;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--tx)}
+.arp h4::before{content:'';width:3px;height:11px;border-radius:2px;background:var(--ac)}
+.arp h4 button{margin-left:auto;background:none;border:0;padding:0;cursor:pointer;font:inherit;letter-spacing:0;text-transform:none;font-size:11px;font-weight:600;color:var(--ac)}
+.arp .ao{display:flex;align-items:center;justify-content:space-between;height:30px;padding:0 10px;margin-bottom:2px;border-radius:8px;border:1px solid transparent;font-size:12.5px;color:var(--mu);cursor:pointer}
+.arp .ao:hover{background:var(--hov);color:var(--tx)}
+.arp .ao.on{background:rgba(var(--acrgb),.16);border-color:rgba(var(--acrgb),.4);color:var(--tx);font-weight:600}
+.arp .ao .ck{width:16px;height:16px;border-radius:50%;background:var(--ac);color:var(--onac);display:none;place-items:center}.arp .ao.on .ck{display:grid}.arp .ao .ck svg{width:10px;height:10px;stroke-width:3}
+.arp .ai{display:flex;align-items:center;gap:10px;height:34px;padding:0 10px;margin-bottom:3px;border-radius:8px;background:var(--hov2);border:1px solid transparent;font-size:12.5px;cursor:pointer}
+.arp .ai:hover{background:var(--hov)}
+.arp .ai.on{border-color:rgba(var(--acrgb),.28)}
+.arp .ai .bx{width:16px;height:16px;flex:none;border-radius:4px;border:1.5px solid var(--mu);display:grid;place-items:center;color:var(--onac)}.arp .ai .bx svg{width:11px;height:11px;stroke-width:3;opacity:0}
+.arp .ai.on .bx{background:var(--ac);border-color:var(--ac)}.arp .ai.on .bx svg{opacity:1}
+.arp .ai.irr{color:var(--mu)}.arp .ai.irr.on{color:var(--tx)}
+.arp .ai em{margin-left:auto;font-style:normal;font-size:10.5px;font-weight:600;color:#d99a06}
+.arp .an{margin:10px 2px 6px;font-size:11px;line-height:1.45;color:var(--mu)}
+.arp .as{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 2px 10px;font-size:11px;color:var(--mu)}
+.arp .as span{display:inline-flex;align-items:center;gap:6px}.arp .as i{width:6px;height:6px;border-radius:50%;background:var(--mu)}.arp .as.on i{background:var(--ok)}.arp .as.on span{color:var(--ok)}
+.arp .as button{background:none;border:0;padding:0;cursor:pointer;font:inherit;font-weight:600;color:var(--ac)}
+.arp .btn{width:100%;justify-content:center}`;
+  document.head.append(s);
+})();
+
+const AU_FREQ = [['never', 'Nunca'], ['daily', 'A cada dia'], ['weekly', 'A cada 7 dias'], ['monthly', 'A cada 30 dias']];
+const AU_IT = [['temp', 'Arquivos temporários'], ['prefetch', 'Arquivos do Prefetch'], ['bin', 'Lixeira'], ['wu', 'Cache do Windows Update'], ['thumbs', 'Cache de miniaturas']];
+let AUP = null, AUBUSY = false;
+function auClose() { const p = document.getElementById('arpop'); if (p) p.remove(); const b = document.getElementById('arbtn'); if (b) b.classList.remove('open'); AUP = null; }
+function auPaint() {
+  const p = document.getElementById('arpop'); if (!p || !AUP) return;
+  const safe = ['temp', 'prefetch', 'wu', 'thumbs'], all = safe.every(k => AUP.items.has(k));
+  p.innerHTML = `<h4>${tr('Frequência automática')}</h4>${AU_FREQ.map(([k, n]) => `<div class="ao ${AUP.freq === k ? 'on' : ''}" data-arf="${k}"><span>${tr(n)}</span><span class="ck">${ico('okc')}</span></div>`).join('')}
+<h4 style="margin-top:14px">${tr('O que limpar automaticamente')}<button type="button" id="arall">${tr(all ? 'Limpar seleção' : 'Selecionar tudo')}</button></h4>
+${AU_IT.map(([k, n]) => { const on = k === 'bin' ? AUP.bin : AUP.items.has(k); return `<div class="ai ${on ? 'on' : ''} ${k === 'bin' ? 'irr' : ''}" data-ari="${k}"><span class="bx">${ico('okc')}</span><span>${tr(n)}</span>${k === 'bin' ? `<em>${tr('Irreversível')}</em>` : ''}</div>`; }).join('')}
+<p class="an">${tr('Funciona em segundo plano enquanto o programa estiver aberto ou na bandeja.')}</p>
+<div class="as ${AUP.freq !== 'never' ? 'on' : ''}"><span><i></i>${tr(AUP.freq !== 'never' ? 'Automação ativada' : 'Automação desativada')}</span><button type="button" id="arun">${tr('Executar agora')}</button></div>
+<button type="button" class="btn" id="arsave">${tr('Salvar automação')}</button>`;
+}
+function auOpen(btn) {
+  const a = S.auto; if (!a) return;
+  AUP = { freq: a.freq || 'never', items: new Set((a.items || []).filter(x => x !== 'bin')), bin: !!a.binAuth };
+  const p = document.createElement('div'); p.id = 'arpop'; p.className = 'arp'; document.body.append(p); btn.classList.add('open'); auPaint();
+  const r = btn.getBoundingClientRect(), w = 290;
+  p.style.top = (r.bottom + 8) + 'px'; p.style.left = Math.max(8, Math.min(r.right - w, innerWidth - w - 8)) + 'px'; p.style.maxHeight = Math.max(240, innerHeight - r.bottom - 20) + 'px';
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') auClose(); });
+document.addEventListener('click', async e => {
+  const c = s => e.target.closest(s); let el;
+  if (el = c('#arbtn')) { return document.getElementById('arpop') ? auClose() : auOpen(el); }
+  if (!c('#arpop')) { if (!AUBUSY) auClose(); return; }
+  if (!AUP) return;
+  if (el = c('[data-arf]')) { AUP.freq = el.dataset.arf; return auPaint(); }
+  if (c('#arall')) { const safe = ['temp', 'prefetch', 'wu', 'thumbs']; if (safe.every(k => AUP.items.has(k))) AUP.items.clear(); else safe.forEach(k => AUP.items.add(k)); return auPaint(); }
+  if (el = c('[data-ari]')) {
+    const k = el.dataset.ari;
+    if (k !== 'bin') { AUP.items.has(k) ? AUP.items.delete(k) : AUP.items.add(k); return auPaint(); }
+    if (AUP.bin) { AUP.bin = false; return auPaint(); }
+    AUBUSY = true; const ok = await modal({ title: 'Esvaziar a Lixeira automaticamente', html: '<p>A cada limpeza automática, a Lixeira será esvaziada e os arquivos <b>apagados definitivamente</b>, sem aviso.</p>', ok: 'Autorizar', danger: true }); AUBUSY = false;
+    if (ok && AUP) AUP.bin = true; return auPaint();
+  }
+  if (c('#arsave')) { const pay = { freq: AUP.freq, items: [...AUP.items], binAuth: AUP.bin }; auClose(); try { await setAuto(pay); toast('Automação salva.'); } catch { toast('Não foi possível salvar.', 'err'); } return; }
+});
+document.addEventListener('click', e => { const t = e.target.closest('[data-hx]'); if (t) t.classList.toggle('open'); });
+{ const _go1 = go; go = function (p) { auClose(); return _go1(p); }; }
