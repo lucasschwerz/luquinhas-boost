@@ -256,7 +256,7 @@ const DV = { nvidia: 'NVIDIA', amd: 'AMD', intel: 'Intel' };
 .dcard.dsys{background:radial-gradient(420px 220px at 0% 100%,rgba(var(--acrgb),.14),transparent 70%),radial-gradient(420px 200px at 100% 0%,rgba(var(--acrgb),.08),transparent 70%),var(--card)}
 .dcard.dwu{background:radial-gradient(460px 200px at 100% 100%,rgba(var(--acrgb),.17),transparent 70%),radial-gradient(320px 150px at 0% 0%,rgba(var(--acrgb),.07),transparent 70%),var(--card)}
 /* ícones com luz suave */
-.hban .ptile,.opH:has(+.bhero) .ptile,.opH:has(+.csum) .ptile,.opH:has(+#drbox) .ptile{color:var(--ac);background:rgba(var(--acrgb),.14);border-color:rgba(var(--acrgb),.42);box-shadow:0 0 16px -4px rgba(var(--acrgb),.55),inset 0 0 12px rgba(var(--acrgb),.14)}
+.hban .ptile,.opH:has(+.bhero) .ptile,.opH:has(+.csum) .ptile,.opH:has(+#drbox) .ptile,.opH:has(+.opbar) .ptile,.opH:has(+.cs2g) .ptile{color:var(--ac);background:rgba(var(--acrgb),.14);border-color:rgba(var(--acrgb),.42);box-shadow:0 0 16px -4px rgba(var(--acrgb),.55),inset 0 0 12px rgba(var(--acrgb),.14)}
 .hdual .mk2 svg,.csum .mi,.dcard.dsys .mi,.dcard.dwu .mi{background:rgba(var(--acrgb),.14);border-color:rgba(var(--acrgb),.38);box-shadow:inset 0 0 10px rgba(var(--acrgb),.16)}
 /* botões principais */
 .hban .btn,.hdual .btn,.bhero .btn,.csum .btn,.dcard .btn{background:linear-gradient(135deg,var(--ac),var(--ac2));box-shadow:0 4px 16px -6px rgba(var(--acrgb),.65)}
@@ -315,7 +315,7 @@ function hRender() {
 
 // ---------- atualizador integrado ----------
 const _cfg0 = PG.cfg;
-const startCard = () => `<div class="card st" style="margin-top:12px"><h3>Inicialização</h3><div class="list"><div class="row"><div><b>Iniciar com o Windows</b><small>Abre o programa escondido na bandeja quando você entra no Windows. Como administrador, usa uma tarefa agendada e não pede confirmação.</small></div><div class="sw ${S.auto && S.auto.startup ? 'on' : ''}" id="sstart"></div></div><div class="row"><div><b>Sempre abrir como administrador</b><small>Pede a permissão do Windows (UAC) ao abrir, para os ajustes e limpezas que exigem administrador funcionarem sempre.</small></div><div class="sw ${S.alwaysAdmin ? 'on' : ''}" id="sadm"></div></div></div></div>`;
+const startCard = () => `<div class="card st" style="margin-top:12px"><h3>Inicialização</h3><div class="list"><div class="row"><div><b>Iniciar com o Windows</b><small>Abre o programa escondido na bandeja quando você entra no Windows. Como administrador, usa uma tarefa agendada e não pede confirmação.</small></div><div class="sw ${S.auto && S.auto.startup ? 'on' : ''}" id="sstart"></div></div><div class="row"><div><b>Executar em segundo plano</b><small>Ao fechar a janela, o programa continua na bandeja (perto do relógio) para a limpeza automática funcionar. Desligado, fechar a janela encerra o programa.</small></div><div class="sw ${!S.auto || S.auto.background !== false ? 'on' : ''}" id="sbg"></div></div><div class="row"><div><b>Sempre abrir como administrador</b><small>Pede a permissão do Windows (UAC) ao abrir, para os ajustes e limpezas que exigem administrador funcionarem sempre.</small></div><div class="sw ${S.alwaysAdmin ? 'on' : ''}" id="sadm"></div></div></div></div>`;
 PG.cfg = () => { const h = _cfg0(), k = '<div class="card st" style="margin-top:12px"><h3>Cor do programa</h3>', i = h.indexOf(k); return (i < 0 ? h : h.slice(0, i) + startCard() + h.slice(i)) + `<div class="card st" style="margin-top:12px"><h3>Atualizações</h3><p class="mu sm">Versão atual: v${S.ver}. O programa baixa o instalador da Release do GitHub, confere o checksum SHA-256 e só então instala. Suas configurações são mantidas.</p><button class="btn" id="updchk">Verificar atualizações</button></div>`; };
 async function openUpdater() {
   const m = ovl('<h3>Atualização</h3><p>Verificando...</p>', []), close = { t: 'Fechar', cls: 'alt', f: () => m.close() };
@@ -427,6 +427,48 @@ async function loadCleanScan() {
   S.cscanBusy = false; paintScan();
 }
 
+// ---------- CS2: visual interno ----------
+(function () {
+  const s = document.createElement('style');
+  s.textContent = `
+.card.cs2c{position:relative;overflow:hidden;isolation:isolate;border-color:rgba(var(--acrgb),.26)}
+.card.cs2c:hover{border-color:rgba(var(--acrgb),.45)}
+.card.cs2c.cl1,.card.cs2c.cl1:hover{background:radial-gradient(420px 200px at 100% 0%,rgba(var(--acrgb),.2),transparent 70%),radial-gradient(320px 160px at 0% 100%,rgba(var(--acrgb),.07),transparent 70%),var(--card)}
+.card.cs2c.cl2,.card.cs2c.cl2:hover{background:radial-gradient(380px 200px at 0% 100%,rgba(var(--acrgb),.17),transparent 70%),radial-gradient(320px 160px at 100% 0%,rgba(var(--acrgb),.07),transparent 70%),var(--card)}
+.card.cs2c.cl3,.card.cs2c.cl3:hover{background:radial-gradient(520px 200px at 100% 0%,rgba(var(--acrgb),.12),transparent 70%),var(--card)}
+.cs2h{display:flex;align-items:center;gap:10px;margin:0 0 6px}.cs2h h3{margin:0}
+.cs2h .mi2{width:30px;height:30px;border-radius:9px;display:grid;place-items:center;flex:none;color:var(--ac);background:rgba(var(--acrgb),.14);border:1px solid rgba(var(--acrgb),.38);box-shadow:inset 0 0 10px rgba(var(--acrgb),.16)}.cs2h .mi2 svg{width:16px;height:16px}
+.cs2c .cd .hl{color:#fff;background:rgba(var(--acrgb),.28);border-radius:5px;padding:1px 5px}
+.cs2sec{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:22px 0 12px}.cs2sec h3{margin:0}
+.xopt{margin:6px 0 14px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--inset)}
+.xopt .row{padding:12px 14px}.xopt .row:first-child{border-top:0}.xopt .row small{display:block;color:var(--mu);font-size:12px;margin-top:2px}
+.xopt .row.sub{padding:8px 14px 8px 28px;background:rgba(var(--acrgb),.05)}.xopt .row.sub span{font-size:13px;color:var(--mu)}
+.xhint{margin:0 0 12px}
+.mpl{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 14px}
+.mp{display:inline-flex;align-items:center;gap:6px;padding:3px 12px 3px 4px;border-radius:99px;border:1px solid var(--line);background:var(--inset);color:var(--tx);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;transition:.2s}.mp:hover{border-color:rgba(var(--acrgb),.6)}.mp.on{border-color:var(--ac);background:rgba(var(--acrgb),.16);color:var(--ac3)}
+.mp .mt{position:relative;display:block;border-radius:50%;background:#0c0c10;flex:none}.mp .mt img{position:absolute;display:block;margin:0;max-width:none;image-rendering:pixelated}
+.mprev{display:flex;gap:16px;align-items:center}
+.mstage{position:relative;width:140px;height:140px;flex:none;border-radius:16px;display:grid;place-items:center;overflow:hidden;border:1px solid rgba(var(--acrgb),.32);background:radial-gradient(circle at 50% 50%,rgba(var(--acrgb),.16),transparent 68%),linear-gradient(rgba(255,255,255,.035) 2px,transparent 2px) calc(50% - 1px) calc(50% - 1px)/10px 10px,linear-gradient(90deg,rgba(255,255,255,.035) 2px,transparent 2px) calc(50% - 1px) calc(50% - 1px)/10px 10px,#0c0c10;box-shadow:inset 0 0 24px rgba(0,0,0,.55)}
+.mstage::before,.mstage::after{content:'';position:absolute;background:rgba(255,255,255,.08)}
+.mstage::before{left:calc(50% - 1px);top:0;bottom:0;width:2px}.mstage::after{top:calc(50% - 1px);left:0;right:0;height:2px}
+.mimg{position:relative;z-index:1;display:block;image-rendering:pixelated;filter:drop-shadow(0 0 6px var(--mc,#fff))}
+.mtx{flex:1;min-width:0}.mtx>b{font-size:16px}.mtx .cd{margin:8px 0}
+`;
+  document.head.append(s);
+})();
+Object.assign(I18N, {
+  'Executar em segundo plano': ['Run in background', 'Ejecutar en segundo plano'],
+  'Ao fechar a janela, o programa continua na bandeja (perto do relógio) para a limpeza automática funcionar. Desligado, fechar a janela encerra o programa.': ['When you close the window, the program stays in the tray (near the clock) so automatic cleanup keeps working. When off, closing the window quits the program.', 'Al cerrar la ventana, el programa sigue en la bandeja (cerca del reloj) para que la limpieza automática funcione. Desactivado, cerrar la ventana cierra el programa.'],
+  'O programa continuará em segundo plano ao fechar a janela.': ['The program will keep running in the background when you close the window.', 'El programa seguirá en segundo plano al cerrar la ventana.'],
+  'Fechar a janela agora encerra o programa.': ['Closing the window now quits the program.', 'Cerrar la ventana ahora cierra el programa.'],
+  'Miras': ['Crosshairs', 'Miras'], 'Copiar código da mira': ['Copy crosshair code', 'Copiar código de la mira'],
+  'Pular no scroll': ['Jump on scroll', 'Saltar con la rueda'],
+  'Zoom do radar': ['Radar zoom', 'Zoom del radar'],
+  'Rolar para cima': ['Scroll up', 'Rueda arriba'], 'Rolar para baixo': ['Scroll down', 'Rueda abajo'],
+  'Tecla do zoom do radar': ['Radar zoom key', 'Tecla del zoom del radar'],
+  'Desativado: a cfg não inclui essa bind.': ['Off: the cfg does not include this bind.', 'Desactivado: la cfg no incluye este bind.']
+});
+
 // ---------- cliques dos módulos novos ----------
 document.addEventListener('click', e => { if (!e.target.closest('.omw')) document.querySelectorAll('.omw.on').forEach(x => x.classList.remove('on')); });
 document.addEventListener('change', e => { if (e.target.id === 'arep') setAuto({ freq: e.target.value }); });
@@ -441,6 +483,7 @@ document.addEventListener('click', async e => {
   if (el = c('[data-preset]')) { const m = document.querySelector('.omw'); if (m) m.classList.remove('on'); return runPreset(el.dataset.preset, $('#opmore') || el); }
   if (el = c('[data-clc]')) { const i = el.dataset.clc; cl.has(i) ? cl.delete(i) : cl.add(i); el.classList.toggle('on', cl.has(i)); return cleanSel(); }
   if (el = c('#sstart')) { const on = !(S.auto && S.auto.startup); try { S.auto = await api.autoSet({ startup: on }); } catch { return toast('Não foi possível alterar.', 'err'); } if (S.auto.startupNote) toast(S.auto.startupNote, 'err'); else toast(on ? 'O programa vai abrir junto com o Windows.' : 'Inicialização com o Windows desativada.'); return go('cfg'); }
+  if (el = c('#sbg')) { const on = !!(S.auto && S.auto.background === false); try { S.auto = await api.autoSet({ background: on }); } catch { return toast('Não foi possível alterar.', 'err'); } toast(on ? 'O programa continuará em segundo plano ao fechar a janela.' : 'Fechar a janela agora encerra o programa.'); return go('cfg'); }
   if (el = c('#sadm')) {
     if (S.alwaysAdmin) { S.alwaysAdmin = await api.admSet(false); toast('O programa não vai mais pedir administrador ao abrir.'); return go('cfg'); }
     if (S.admin) { S.alwaysAdmin = await api.admSet(true); toast('Pronto! Ele sempre abrirá como administrador.'); return go('cfg'); }
@@ -626,7 +669,7 @@ function auClose() { const p = document.getElementById('arpop'); if (p) p.remove
 function auPaint() {
   const p = document.getElementById('arpop'); if (!p || !AUP) return;
   const safe = ['temp', 'prefetch', 'wu', 'thumbs'], all = safe.every(k => AUP.items.has(k));
-  p.innerHTML = `<h4>${tr('Frequência automática')}</h4>${AU_FREQ.map(([k, n]) => `<div class="ao ${AUP.freq === k ? 'on' : ''}" data-arf="${k}"><span>${tr(n)}</span><span class="ck">${ico('okc')}</span></div>`).join('')}
+  p.innerHTML = `<h4>${tr('Frequência automática')}</h4><div class="afg">${AU_FREQ.map(([k, n]) => `<div class="ao ${AUP.freq === k ? 'on' : ''}" data-arf="${k}"><span>${tr(n)}</span><span class="ck">${ico('okc')}</span></div>`).join('')}</div>
 <h4 style="margin-top:14px">${tr('O que limpar automaticamente')}<button type="button" id="arall">${tr(all ? 'Limpar seleção' : 'Selecionar tudo')}</button></h4>
 ${AU_IT.map(([k, n]) => { const on = k === 'bin' ? AUP.bin : AUP.items.has(k); return `<div class="ai ${on ? 'on' : ''} ${k === 'bin' ? 'irr' : ''}" data-ari="${k}"><span class="bx">${ico('okc')}</span><span>${tr(n)}</span>${k === 'bin' ? `<em>${tr('Irreversível')}</em>` : ''}</div>`; }).join('')}
 <p class="an">${tr('Funciona em segundo plano enquanto o programa estiver aberto ou na bandeja.')}</p>
@@ -637,7 +680,7 @@ function auOpen(btn) {
   const a = S.auto; if (!a) return;
   AUP = { freq: a.freq || 'never', items: new Set((a.items || []).filter(x => x !== 'bin')), bin: !!a.binAuth };
   const p = document.createElement('div'); p.id = 'arpop'; p.className = 'arp'; document.body.append(p); btn.classList.add('open'); auPaint();
-  const r = btn.getBoundingClientRect(), w = 290;
+  const r = btn.getBoundingClientRect(), w = 316;
   p.style.top = (r.bottom + 8) + 'px'; p.style.left = Math.max(8, Math.min(r.right - w, innerWidth - w - 8)) + 'px'; p.style.maxHeight = Math.max(240, innerHeight - r.bottom - 20) + 'px';
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') auClose(); });
@@ -659,3 +702,78 @@ document.addEventListener('click', async e => {
 });
 document.addEventListener('click', e => { const t = e.target.closest('[data-hx]'); if (t) t.classList.toggle('open'); });
 { const _go1 = go; go = function (p) { auClose(); return _go1(p); }; }
+
+
+// ---------- bloom que segue o cursor (Saúde do PC, Limpeza, Drivers) + rodapé da barra lateral ----------
+(function () {
+  const s = document.createElement('style');
+  s.textContent = `
+/* brilho de borda que segue o cursor, nos mesmos moldes dos cards */
+.ht,.bhero,.csum,.dcard,.ccard,.binfo{position:relative}
+.ht::before,.bhero::before,.csum::before,.dcard::before,.ccard::before,.binfo::before{content:'';position:absolute;inset:0;border-radius:inherit;padding:1.5px;pointer-events:none;opacity:0;transition:opacity .25s;z-index:2;background:radial-gradient(200px circle at var(--mx,50%) var(--my,50%),rgba(var(--acrgb),1),rgba(var(--acrgb),.35) 45%,transparent 75%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+.ht:hover::before,.bhero:hover::before,.csum:hover::before,.dcard:hover::before,.ccard:hover::before,.binfo:hover::before{opacity:1}
+/* bloom (preenchimento) que segue o cursor */
+.card:not(.busy)::after,.ht::after,.bhero::after,.csum::after,.dcard:not(.dfeat)::after,.ccard::after,.binfo::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(300px circle at var(--mx,50%) var(--my,50%),rgba(var(--acrgb),.2),transparent 70%)}
+.card:not(.busy):hover::after,.ht:hover::after,.bhero:hover::after,.csum:hover::after,.dcard:not(.dfeat):hover::after,.ccard:hover::after,.binfo:hover::after{opacity:1}
+html[data-mode=light] .card:not(.busy)::after,html[data-mode=light] .ht::after,html[data-mode=light] .bhero::after,html[data-mode=light] .csum::after,html[data-mode=light] .dcard:not(.dfeat)::after,html[data-mode=light] .ccard::after,html[data-mode=light] .binfo::after{background:radial-gradient(300px circle at var(--mx,50%) var(--my,50%),rgba(var(--acrgb),.12),transparent 70%)}
+.ht::before{z-index:1}
+@media(prefers-reduced-motion:reduce){.ht::after,.card::after{transition:none}}
+
+/* rodapé da barra lateral: discreto, versão no canto inferior esquerdo */
+.sfoot{margin:10px 0 0;padding:0 12px;display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:6px;border:0;border-radius:0;background:none;font-size:10.5px;line-height:1}
+.adm{display:inline-flex;align-items:center;gap:6px;font-size:10.5px;font-weight:500;color:var(--mu);letter-spacing:.2px}
+.adm i{width:5px;height:5px;border-radius:50%;background:var(--mu);opacity:.7;box-shadow:none}
+.adm.ok i{background:#34d399;opacity:1;box-shadow:none}
+.vv{display:inline-flex;align-items:center;gap:6px;padding:0;border:0;background:none;box-shadow:none;font-family:ui-monospace,Consolas,monospace;font-size:10.5px;font-weight:400;letter-spacing:0;color:var(--mu);opacity:.8}
+.vv::before{content:'·';opacity:.7}
+html[data-mode=light] .vv{color:var(--mu)}
+
+/* textos secundários em cinza neutro (sem tom roxo) e subtítulos de página menores */
+html:not([data-mode=light]){--mu:#8c8c8c}
+h1+.mu,.opT p{font-size:12px;margin-top:2px}
+`;
+  document.head.append(s);
+})();
+
+
+// ---------- correções visuais: brilho do anel, ícone da Limpeza e painel de frequência automática ----------
+(function () {
+  const s = document.createElement('style');
+  s.textContent = `
+/* anel de otimização: o brilho não pode ser cortado pela borda do SVG */
+.rgc svg{overflow:visible}
+.hdual .rgc::before{inset:-4px}
+
+/* resumo da Limpeza: ícone limpo, sem anéis e sem ponto orbitando */
+.csum .orb i,.csum .orb .dot{display:none}
+.csum .orb::before{inset:22px;filter:blur(14px);background:radial-gradient(closest-side,rgba(var(--acrgb),.35),transparent)}
+.csum .orb .oc{inset:33px;border-radius:22px;background:linear-gradient(145deg,rgba(var(--acrgb),.32),rgba(var(--acrgb),.10));border:1px solid rgba(var(--acrgb),.55);box-shadow:0 10px 30px -8px rgba(var(--acrgb),.6),inset 0 1px 0 rgba(255,255,255,.18)}
+.csum .orb .oc svg{width:36px;height:36px;color:#fff;filter:drop-shadow(0 2px 6px rgba(var(--acrgb),.6))}
+
+/* painel de frequência automática */
+.arp{width:316px;padding:16px;border-radius:18px;border:1px solid rgba(var(--acrgb),.24);background:radial-gradient(280px 150px at 100% 0%,rgba(var(--acrgb),.16),transparent 70%),var(--elev);box-shadow:0 26px 60px -14px var(--shadow),inset 0 1px 0 rgba(255,255,255,.04);scrollbar-width:thin;scrollbar-color:rgba(var(--acrgb),.4) transparent;animation:arpIn .18s ease-out}
+@keyframes arpIn{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
+.arp h4{margin:2px 2px 10px;font-size:10.5px;font-weight:700;letter-spacing:.12em;color:var(--mu)}
+.arp h4::before{width:3px;height:10px;opacity:.9}
+.arp h4 button{padding:3px 10px;border-radius:99px;background:rgba(var(--acrgb),.12);border:1px solid rgba(var(--acrgb),.32);font-size:10.5px;font-weight:600;color:var(--ac3);transition:.15s}
+.arp h4 button:hover{background:rgba(var(--acrgb),.22)}
+.arp .afg{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:4px}
+.arp .afg .ao{position:relative;justify-content:center;height:38px;margin:0;border:1px solid var(--line);border-radius:11px;background:var(--hov2);font-size:12.5px;transition:.15s}
+.arp .afg .ao:hover{border-color:rgba(var(--acrgb),.45);background:var(--hov);color:var(--tx)}
+.arp .afg .ao.on{background:linear-gradient(135deg,rgba(var(--acrgb),.30),rgba(var(--acrgb),.12));border-color:rgba(var(--acrgb),.65);box-shadow:0 0 16px -5px rgba(var(--acrgb),.6);color:var(--tx)}
+.arp .afg .ao .ck{position:absolute;top:-6px;right:-6px;width:16px;height:16px;box-shadow:0 0 0 2px var(--elev)}
+.arp .ai{height:38px;margin-bottom:6px;gap:11px;padding:0 12px;border:1px solid var(--line);border-radius:11px;background:var(--hov2);color:var(--mu);transition:.15s}
+.arp .ai:hover{background:var(--hov);border-color:rgba(var(--acrgb),.3);color:var(--tx)}
+.arp .ai.on{color:var(--tx);background:rgba(var(--acrgb),.10);border-color:rgba(var(--acrgb),.42)}
+.arp .ai .bx{border-radius:5px;transition:.15s}
+.arp .ai em{padding:2px 8px;border-radius:99px;background:rgba(217,154,6,.12);border:1px solid rgba(217,154,6,.32);font-size:10px;letter-spacing:.02em}
+.arp .an{margin:12px 2px 0;font-size:11px;line-height:1.5}
+.arp .as{margin:12px 2px 12px;padding-top:12px;border-top:1px solid var(--line)}
+.arp .as button{padding:4px 11px;border-radius:99px;background:rgba(var(--acrgb),.12);border:1px solid rgba(var(--acrgb),.32);font-size:11px;color:var(--ac3);transition:.15s}
+.arp .as button:hover{background:rgba(var(--acrgb),.22)}
+.arp .btn{height:42px;border-radius:12px}
+html[data-mode=light] .arp h4 button,html[data-mode=light] .arp .as button{color:var(--ac)}
+@media(prefers-reduced-motion:reduce){.arp{animation:none}}
+`;
+  document.head.append(s);
+})();

@@ -9,7 +9,7 @@ module.exports = function (X) {
 
   // ---------- Limpeza automática + bandeja ----------
   const ITEMS = ['temp', 'prefetch', 'wu', 'thumbs', 'bin'], DAYS = { daily: 1, weekly: 7, monthly: 30 };
-  const autoGet = () => ({ freq: 'never', items: ['temp', 'thumbs'], binAuth: false, startup: false, last: 0, ...(load().auto || {}) });
+  const autoGet = () => ({ freq: 'never', items: ['temp', 'thumbs'], binAuth: false, startup: false, background: true, last: 0, ...(load().auto || {}) });
   let tray = null, timer = null;
   const monitorOn = () => autoGet().freq !== 'never';
   async function runAuto() {
@@ -68,6 +68,7 @@ module.exports = function (X) {
     if (p && Array.isArray(p.items)) n.items = p.items.filter(i => ITEMS.includes(i) && i !== 'bin');
     if (p && typeof p.binAuth === 'boolean') n.binAuth = p.binAuth;
     if (p && typeof p.startup === 'boolean') n.startup = p.startup;
+    if (p && typeof p.background === 'boolean') n.background = p.background;
     n.items = n.items.filter(i => i !== 'bin'); if (n.binAuth) n.items.push('bin');
     if (prev.freq === 'never' && n.freq !== 'never') n.last = Date.now();
     const c = load(); c.auto = n; save(c); setupMonitor();
@@ -362,5 +363,5 @@ module.exports = function (X) {
   ipcMain.handle('update:apply', () => { if (!pending || !fs.existsSync(pending.dest)) return false; spawn(pending.dest, [], { detached: true, stdio: 'ignore' }).unref(); setTimeout(() => app.quit(), 600); return true; });
   ipcMain.handle('update:cancel', () => { if (pending) { try { fs.rmSync(pending.dir, { recursive: true, force: true }); } catch {} pending = null; } return true; });
 
-  return { monitorOn, onHidden, start: () => { setupMonitor(); applyStartup().catch(() => {}); setTimeout(checkDue, 60000); loadIconCache(); setTimeout(warmIcons, 1500); } };
+  return { monitorOn, bgOn: () => autoGet().background !== false, onHidden, start: () => { setupMonitor(); applyStartup().catch(() => {}); setTimeout(checkDue, 60000); loadIconCache(); setTimeout(warmIcons, 1500); } };
 };

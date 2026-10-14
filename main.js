@@ -24,15 +24,22 @@ const cfgPath = () => path.join(app.getPath('userData'), 'cfg.json');
 const load = () => { try { return JSON.parse(fs.readFileSync(cfgPath(), 'utf8')); } catch { return {}; } };
 const save = c => { try { fs.writeFileSync(cfgPath(), JSON.stringify(c)); } catch {} };
 
-function wipe(dir, filter = () => true) {
-  try { for (const f of fs.readdirSync(dir)) if (filter(f)) try { fs.rmSync(path.join(dir, f), { recursive: true, force: true }); } catch {} } catch {}
+const tick = () => new Promise(r => setImmediate(r));
+async function wipe(dir, filter = () => true) {
+  let l; try { l = await fs.promises.readdir(dir); } catch { return true; }
+  let n = 0;
+  for (const f of l) {
+    if (!filter(f)) continue;
+    try { await fs.promises.rm(path.join(dir, f), { recursive: true, force: true }); } catch {}
+    if (++n % 25 === 0) await tick();
+  }
   return true;
 }
 const clean = {
-  temp: async () => (wipe(os.tmpdir()), wipe('C:\\Windows\\Temp')),
+  temp: async () => (await wipe(os.tmpdir()), await wipe('C:\\Windows\\Temp')),
   prefetch: async () => wipe('C:\\Windows\\Prefetch'),
   bin: async () => (await ps('Clear-RecycleBin -Force -ErrorAction SilentlyContinue')).ok,
-  wu: async () => { await run('net stop wuauserv'); wipe('C:\\Windows\\SoftwareDistribution\\Download'); return run('net start wuauserv'); },
+  wu: async () => { await run('net stop wuauserv'); await wipe('C:\\Windows\\SoftwareDistribution\\Download'); return run('net start wuauserv'); },
   thumbs: async () => wipe(path.join(process.env.LOCALAPPDATA || '', 'Microsoft\\Windows\\Explorer'), f => /^thumbcache_.*\.db$/i.test(f)),
 };
 
@@ -123,12 +130,12 @@ const T = [
     compat: async () => (await steamPath()) ? null : 'Steam não encontrada neste PC.',
     chkFn: async () => (await regGet(CU + 'Run', 'Steam')) === null,
     on: ['taskkill /f /im steam.exe & exit 0', 'taskkill /f /im steamwebhelper.exe & exit 0',
-      async () => { for (const d of ['Steam\\htmlcache', 'Steam\\appcache\\httpcache']) wipe(path.join(LAD, d)); const s = await steamPath(); if (s) wipe(path.join(s, 'appcache', 'httpcache')); return { ok: true }; }, D(CU + 'Run', 'Steam')],
+      async () => { for (const d of ['Steam\\htmlcache', 'Steam\\appcache\\httpcache']) await wipe(path.join(LAD, d)); const s = await steamPath(); if (s) await wipe(path.join(s, 'appcache', 'httpcache')); return { ok: true }; }, D(CU + 'Run', 'Steam')],
     off: [async () => { const s = await steamPath(); if (!s) return { ok: false, err: 'Steam não encontrada.' }; return runx(`reg add "${CU}Run" /v Steam /t REG_SZ /d "\\"${s}\\steam.exe\\" -silent" /f`); }] },
   { id: 'discord', danger: 'Fecha o Discord se estiver aberto, desliga a aceleração de hardware dele, apaga o cache e tira o Discord da inicialização. Chamadas de vídeo e transmissão de tela podem ficar mais pesadas sem a aceleração. Você pode desfazer a aceleração desligando o ajuste.', n: 'Otimizar Discord', d: 'Desliga a aceleração de hardware, limpa o cache e tira da inicialização.', c: ['Geral', 'Crítico'],
     compat: () => fs.existsSync(path.join(APPD, 'discord')) ? null : 'Discord não encontrado neste PC.',
     chkFn: async () => { try { return JSON.parse(fs.readFileSync(discordCfg(), 'utf8')).enableHardwareAcceleration === false; } catch { return false; } },
-    on: ['taskkill /f /im Discord.exe & exit 0', async () => { const r = setDiscordHW(false); for (const d of ['Cache', 'Code Cache', 'GPUCache']) wipe(path.join(APPD, 'discord', d)); return r; }, D(CU + 'Run', 'Discord')],
+    on: ['taskkill /f /im Discord.exe & exit 0', async () => { const r = setDiscordHW(false); for (const d of ['Cache', 'Code Cache', 'GPUCache']) await wipe(path.join(APPD, 'discord', d)); return r; }, D(CU + 'Run', 'Discord')],
     off: [async () => setDiscordHW(true)] },
   { id: 'onedrive', admin: 1, danger: 'Remove o OneDrive deste Windows. Arquivos que só existem na nuvem, ou pastas (Área de Trabalho, Documentos, Imagens) com backup do OneDrive ligado, podem ficar inacessíveis até você reinstalar. Desligue o backup e confirme que seus arquivos estão no PC antes de continuar.', n: 'Remover OneDrive por Completo', d: 'Desinstala o OneDrive e bloqueia a sincronização. Para desfazer, reinstala pelo winget.', c: ['Geral', 'Crítico'],
     chkFn: async () => !fs.existsSync(path.join(LAD, 'Microsoft', 'OneDrive', 'OneDrive.exe')) && !fs.existsSync('C:\\Program Files\\Microsoft OneDrive\\OneDrive.exe'),
@@ -190,23 +197,25 @@ ipcMain.handle('init', async () => ({
   admin: await run('net session >nul 2>&1'), alwaysAdmin: !!load().alwaysAdmin, up: os.uptime(), sys: await sys(),
 }));
 ipcMain.handle('tweaks', (_e, ids, en) => apply(ids, en));
-function walk(p, st) {
-  let s; try { s = fs.lstatSync(p); } catch { return; }
-  if (s.isDirectory()) { let l; try { l = fs.readdirSync(p); } catch { return; } for (const f of l) { if (st.n++ > 200000) return; walk(path.join(p, f), st); } }
-  else { st.size += s.size; st.count++; }
+async function walk(p, st) {
+  let s; try { s = await fs.promises.lstat(p); } catch { return; }
+  if (s.isDirectory()) {
+    let l; try { l = await fs.promises.readdir(p); } catch { return; }
+    for (const f of l) { if (st.n++ > 200000) return; if (st.n % 200 === 0) await tick(); await walk(path.join(p, f), st); }
+  } else { st.size += s.size; st.count++; }
 }
-function dirStat(dirs, filter = () => true) {
+async function dirStat(dirs, filter = () => true) {
   const st = { size: 0, count: 0, n: 0 };
-  for (const d of dirs) { let l; try { l = fs.readdirSync(d); } catch { continue; } for (const f of l) if (filter(f)) walk(path.join(d, f), st); }
+  for (const d of dirs) { let l; try { l = await fs.promises.readdir(d); } catch { continue; } for (const f of l) if (filter(f)) await walk(path.join(d, f), st); }
   return { size: st.size, count: st.count };
 }
 // tamanho e quantidade de arquivos de cada item da limpeza (so leitura, nada e apagado)
 ipcMain.handle('clean:scan', async () => {
-  const tick = () => new Promise(r => setImmediate(r)), o = {};
-  o.temp = dirStat([os.tmpdir(), 'C:\\Windows\\Temp']); await tick();
-  o.prefetch = dirStat(['C:\\Windows\\Prefetch']); await tick();
-  o.wu = dirStat(['C:\\Windows\\SoftwareDistribution\\Download']); await tick();
-  o.thumbs = dirStat([path.join(process.env.LOCALAPPDATA || '', 'Microsoft\\Windows\\Explorer')], f => /^thumbcache_.*\.db$/i.test(f)); await tick();
+  const o = {};
+  o.temp = await dirStat([os.tmpdir(), 'C:\\Windows\\Temp']); await tick();
+  o.prefetch = await dirStat(['C:\\Windows\\Prefetch']); await tick();
+  o.wu = await dirStat(['C:\\Windows\\SoftwareDistribution\\Download']); await tick();
+  o.thumbs = await dirStat([path.join(process.env.LOCALAPPDATA || '', 'Microsoft\\Windows\\Explorer')], f => /^thumbcache_.*\.db$/i.test(f)); await tick();
   o.bin = { size: 0, count: 0 };
   try { const r = await ps("$b=(New-Object -ComObject Shell.Application).NameSpace(10);$n=0;$s=0;foreach($i in $b.Items()){$n++;$s+=[int64]$i.Size};@{n=$n;s=$s}|ConvertTo-Json -Compress"); const j = JSON.parse(r.out); o.bin = { size: j.s || 0, count: j.n || 0 }; } catch {}
   return o;
@@ -422,11 +431,11 @@ else {
     if (!adminNow && load().alwaysAdmin && await doElevate()) return;
     mod = require('./modules')({ runx, ps, out, load, save, log, clean, regGet, getJSON, newer, GITHUB_REPO, cs2CfgDir, showWindow: createWindow, isQuitting: () => quitting, isAdmin: () => adminNow });
     mod.start();
-    if (!process.argv.includes('--hidden')) createWindow();
+    if (!process.argv.includes('--hidden') || !mod.bgOn()) createWindow(); // sem segundo plano não há bandeja para reabrir: mostra a janela
   });
 }
 let quitting = false;
 app.on('before-quit', () => { quitting = true; liveStop(); });
-// Fechar a janela NAO encerra o programa: ele continua na bandeja (setinha perto do relogio).
+// Fechar a janela NAO encerra o programa (se "Executar em segundo plano" estiver ligado): ele continua na bandeja (setinha perto do relogio).
 // Para fechar de verdade: botao direito no icone da bandeja -> Encerrar.
-app.on('window-all-closed', () => { liveStop(); if (!mod) return app.quit(); if (!quitting) mod.onHidden(); });
+app.on('window-all-closed', () => { liveStop(); if (!mod) return app.quit(); if (quitting) return; if (mod.bgOn()) mod.onHidden(); else app.quit(); });

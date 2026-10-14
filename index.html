@@ -1,6 +1,6 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Luquinhas Boost</title>
 <style>
-:root{--bg:#0a0a0a;--card:rgba(255,255,255,.035);--line:rgba(255,255,255,.075);--tx:#f3eefc;--mu:#8f86a8;--ac:#a855f7;--ac2:#7c3aed;--ac3:#d8b4fe;--acrgb:168,85,247;--ac2rgb:124,58,237;--hr:0deg;--onac:#fff;--ok:#34d399;--hov:rgba(255,255,255,.04);--hov2:rgba(255,255,255,.025);--alt:rgba(255,255,255,.07);--sw:#3a3354;--inset:rgba(0,0,0,.28);--elev:#0a0a0a;--shadow:#0008}
+:root{--bg:#0a0a0a;--card:rgba(255,255,255,.035);--line:rgba(255,255,255,.075);--tx:#ffffff;--mu:#8f86a8;--ac:#a855f7;--ac2:#7c3aed;--ac3:#d8b4fe;--acrgb:168,85,247;--ac2rgb:124,58,237;--hr:0deg;--onac:#fff;--ok:#34d399;--hov:rgba(255,255,255,.04);--hov2:rgba(255,255,255,.025);--alt:rgba(255,255,255,.07);--sw:#3a3354;--inset:rgba(0,0,0,.28);--elev:#0a0a0a;--shadow:#0008}
 *{box-sizing:border-box}
 body{margin:0;height:100vh;display:flex;background:var(--bg);color:var(--tx);font:14px 'Segoe UI Variable','Segoe UI',sans-serif;overflow:hidden}
 .bg{position:fixed;inset:0;pointer-events:none;background:radial-gradient(650px 420px at 88% -8%,rgba(var(--ac2rgb),.25),transparent),radial-gradient(520px 420px at -5% 105%,rgba(var(--acrgb),.12),transparent)}
@@ -81,7 +81,7 @@ h1{margin:0;font:700 26px Bahnschrift,'Segoe UI';letter-spacing:.5px}h3{margin:0
 .inp{flex:1;min-width:0;padding:8px 12px;border-radius:9px;border:1px solid var(--line);background:var(--inset);color:var(--tx);font:inherit;outline:0;transition:.2s}.inp:focus{border-color:var(--ac)}
 ::selection{background:rgba(var(--acrgb),.35)}
 :focus-visible{outline:2px solid var(--ac);outline-offset:2px}
-.card:hover{background:radial-gradient(280px circle at var(--mx,50%) var(--my,50%),rgba(var(--acrgb),.14),transparent 70%),var(--card)}
+.card:hover{background:radial-gradient(320px circle at var(--mx,50%) var(--my,50%),rgba(var(--acrgb),.24),transparent 70%),var(--card)}
 .btn{overflow:hidden}.btn::before{content:'';position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,rgba(255,255,255,.22) 50%,transparent 70%);transform:translateX(-130%);transition:transform .7s}
 .btn:hover::before{transform:translateX(130%)}
 #splash{position:fixed;inset:0;z-index:99;display:grid;place-items:center;background:var(--bg);transition:opacity .6s ease}
@@ -113,8 +113,8 @@ html[data-mode=light] .warn{color:#8a5a00}
 html[data-mode=light] .card{box-shadow:0 1px 3px rgba(40,25,80,.06)}
 .tw.fps{background:rgba(var(--acrgb),.09);border-color:rgba(var(--acrgb),.28)}
 .tw.fps.on{background:rgba(var(--acrgb),.2);border-color:rgba(var(--acrgb),.55)}
-.tw.fps:hover{background:radial-gradient(280px circle at var(--mx,50%) var(--my,50%),rgba(var(--acrgb),.22),transparent 70%),rgba(var(--acrgb),.09)}
-.tw.fps.on:hover{background:radial-gradient(280px circle at var(--mx,50%) var(--my,50%),rgba(var(--acrgb),.3),transparent 70%),rgba(var(--acrgb),.2)}
+.tw.fps:hover{background:radial-gradient(320px circle at var(--mx,50%) var(--my,50%),rgba(var(--acrgb),.32),transparent 70%),rgba(var(--acrgb),.09)}
+.tw.fps.on:hover{background:radial-gradient(320px circle at var(--mx,50%) var(--my,50%),rgba(var(--acrgb),.4),transparent 70%),rgba(var(--acrgb),.2)}
 .fpsb{background:rgba(var(--acrgb),.3);color:var(--tx)}
 .lgd{display:flex;gap:18px;align-items:center;margin:0 0 14px;color:var(--mu);font-size:12.5px}
 .lg{display:inline-block;width:12px;height:12px;border-radius:4px;border:1px solid var(--line);margin-right:6px;vertical-align:-2px}.lg.f{background:rgba(var(--acrgb),.3);border-color:rgba(var(--acrgb),.6)}
@@ -135,7 +135,12 @@ html[data-mode=light] .card{box-shadow:0 1px 3px rgba(40,25,80,.06)}
 .sk{height:14px;border-radius:6px;background:linear-gradient(90deg,var(--alt),var(--hov),var(--alt));background-size:200% 100%;animation:shim 1.2s linear infinite}@keyframes shim{to{background-position:-200% 0}}
 .md{display:flex;gap:10px;margin-top:10px}.md .btn.sel{outline:2px solid var(--ac);outline-offset:2px}
 
-.spw{display:flex;flex-direction:column;align-items:center}
+.spw{position:relative;isolation:isolate;display:flex;flex-direction:column;align-items:center}
+.spw::before{content:'';position:absolute;left:50%;top:50%;width:520px;height:340px;max-width:90vw;transform:translate(-50%,-50%);z-index:-1;pointer-events:none;border-radius:50%;background:radial-gradient(closest-side,rgba(var(--acrgb),.34),rgba(var(--acrgb),.12) 55%,transparent 100%);filter:blur(14px);animation:sp-fade .9s .4s both,sp-glow 3.2s ease-in-out 1.3s infinite}
+.spm .spB{filter:drop-shadow(0 0 10px rgba(var(--acrgb),.95)) drop-shadow(0 0 22px rgba(var(--acrgb),.6))}
+.spm .spL path{filter:drop-shadow(0 0 8px rgba(var(--acrgb),.35))}
+.spt .w1{text-shadow:0 0 16px rgba(var(--acrgb),.35)}.spt .w2{text-shadow:0 0 14px rgba(var(--acrgb),.95),0 0 32px rgba(var(--acrgb),.55)}
+@keyframes sp-glow{50%{opacity:.62;transform:translate(-50%,-50%) scale(1.07)}}
 .spm{width:84px;height:84px;margin-bottom:22px;overflow:visible}
 .spm .spL,.spm .spB{transform-box:fill-box}
 .spm .spL path{fill:var(--tx)}.spm .spB{fill:var(--ac)}
@@ -143,12 +148,17 @@ html[data-mode=light] .card{box-shadow:0 1px 3px rgba(40,25,80,.06)}
 .spm .spL{animation:sp-L .55s cubic-bezier(.2,.9,.3,1) .3s both}
 .spt{display:flex;align-items:baseline;font-family:Bahnschrift,'Segoe UI Semibold',sans-serif;font-style:italic;font-weight:800;font-size:38px;line-height:1.1;padding:6px 16px}
 .spt .w2{margin-left:.32em;color:var(--ac)}.spt b{display:inline-block;font-weight:inherit;margin-right:.05em;animation:sp-l .5s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(.65s + var(--i) * .045s)}
-.spb{width:150px;height:2px;border-radius:2px;background:var(--line);overflow:hidden;margin-top:22px;animation:sp-fade .4s 1.2s both}.spb i{display:block;height:100%;background:var(--ac);animation:sp-bar 1.1s 1.25s cubic-bezier(.5,.1,.2,1) both}
 @keyframes sp-bolt{from{opacity:0;transform:translate(-16px,-16px)}}
 @keyframes sp-L{from{opacity:0;transform:translateX(18px)}}
-@keyframes sp-l{from{opacity:0;transform:translateY(.55em)}}@keyframes sp-bar{from{transform:translateX(-100%)}}@keyframes sp-fade{from{opacity:0}}
-</style></head><body><div class="bg"></div><div class="drag"></div><div id="splash"><div class="spw"><svg class="spm" viewBox="0 0 64 64"><g class="spL"><g transform="translate(6 0) skewX(-10)"><path d="M24 10h12v28h22v11H24z"/></g></g><path class="spB" d="M30 3 8 34h12l-6 27 26-36H27z"/></svg><div class="spt" aria-label="LUQUINHAS BOOST"><span class="w1"><b style="--i:0">L</b><b style="--i:1">U</b><b style="--i:2">Q</b><b style="--i:3">U</b><b style="--i:4">I</b><b style="--i:5">N</b><b style="--i:6">H</b><b style="--i:7">A</b><b style="--i:8">S</b></span><span class="w2"><b style="--i:9">B</b><b style="--i:10">O</b><b style="--i:11">O</b><b style="--i:12">S</b><b style="--i:13">T</b></span></div><div class="spb"><i></i></div></div></div><script>window.__t0=Date.now()</script>
-<aside><div class="logo"><img src="logo-wide.svg" alt="LuquinhasBoost"></div><div id="nav"></div><div class="sfoot"><span class="adm" id="admb"><i></i><span></span></span><span class="vv" id="ver">v1.3.1</span></div></aside>
+@keyframes sp-l{from{opacity:0;transform:translateY(.55em)}}@keyframes sp-fade{from{opacity:0}}
+
+/* borda com brilho que segue o cursor (so cards) */
+.card{position:relative}
+.card::before{content:'';position:absolute;inset:0;border-radius:inherit;padding:1.5px;pointer-events:none;opacity:0;transition:opacity .25s;background:radial-gradient(200px circle at var(--mx,50%) var(--my,50%),rgba(var(--acrgb),1),rgba(var(--acrgb),.35) 45%,transparent 75%);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0)}
+.card:hover::before{opacity:1}
+html[data-mode=light] .card::before{opacity:0}html[data-mode=light] .card:hover::before{opacity:.8}
+</style></head><body><div class="bg"></div><div class="drag"></div><div id="splash"><div class="spw"><svg class="spm" viewBox="0 0 64 64"><g class="spL"><g transform="translate(6 0) skewX(-10)"><path d="M24 10h12v28h22v11H24z"/></g></g><path class="spB" d="M30 3 8 34h12l-6 27 26-36H27z"/></svg><div class="spt" aria-label="LUQUINHAS BOOST"><span class="w1"><b style="--i:0">L</b><b style="--i:1">U</b><b style="--i:2">Q</b><b style="--i:3">U</b><b style="--i:4">I</b><b style="--i:5">N</b><b style="--i:6">H</b><b style="--i:7">A</b><b style="--i:8">S</b></span><span class="w2"><b style="--i:9">B</b><b style="--i:10">O</b><b style="--i:11">O</b><b style="--i:12">S</b><b style="--i:13">T</b></span></div></div></div><script>window.__t0=Date.now()</script>
+<aside><div class="logo"><img src="logo-wide.svg" alt="LuquinhasBoost"></div><div id="nav"></div><div class="sfoot"><span class="adm" id="admb"><i></i><span></span></span><span class="vv" id="ver">v1.3.2</span></div></aside>
 <div class="lang"><button id="langbtn"></button><div id="langmenu"></div></div>
 <main id="main"><div id="warn"></div><div id="view"></div></main><div id="toast"></div>
 <script>
@@ -179,8 +189,13 @@ const LAUNCH_BASE='-novid -exec +fps_max 0 +fps_max_menu 0 -nojoy -forcenovsync 
 const cname=()=>(S.cfgName||'').replace(/[^\w-]/g,'');
 const tname=()=>(S.tName||'').replace(/[^\w-]/g,'');
 const launch=()=>LAUNCH_BASE+' +exec '+(cname()||'nomedacfg');
+const launchHtml=()=>esc(LAUNCH_BASE)+' <span class="hl">+exec '+esc(cname()||'nomedacfg')+'</span>';
+const DEF_O={jump:true,radar:true};
 const DEF_B={console:'`',molotov:'c',he:'4',smoke:'z',flash:'mouse4',radar:'mouse5',voice:'v',jumpup:'mwheelup',jumpdown:'mwheeldown'};
 const DEF_T={noclip:'x',rethrow:'h',timescale:'j'};
+const OPT_BINDS={jump:['jumpup','jumpdown'],radar:['radar']};
+const isOpt=id=>Object.values(OPT_BINDS).some(a=>a.includes(id));
+const optOn=id=>{for(const k in OPT_BINDS)if(OPT_BINDS[k].includes(id))return S.opts[k]!==false;return true};
 const DEF_THEME={h:271,s:91};
 const SWS=[['Roxo',271,91],['Azul',215,90],['Ciano',187,85],['Verde',145,65],['Amarelo',48,95],['Laranja',25,95],['Vermelho',0,85],['Rosa',330,85]];
 const kn=k=>({mouse1:'botão do mouse (mouse1)',mouse2:'botão do mouse (mouse2)',mouse3:'botão do meio do mouse (mouse3)',mouse4:'botão lateral do mouse (mouse4)',mouse5:'botão lateral do mouse (mouse5)',mwheelup:'roda do mouse para cima',mwheeldown:'roda do mouse para baixo'}[k]||'tecla '+k.toUpperCase());
@@ -203,13 +218,26 @@ function applyBinds(t,defs,binds,def,pad,res){for(const [id,,cmd,d] of defs){con
 function buildCfg(){let t=(S.cfgs&&S.cfgs.principal)||'';if(!t)return '';
  const sv=/^\d+(\.\d+)?$/.test(S.sens||'')&&+S.sens>0&&+S.sens<=100?S.sens:'1.272727';
  t=t.replace(/^sensitivity\s+"[^"]*"/m,()=>`sensitivity "${sv}"`);
- return applyBinds(t,BDEFS,S.binds,DEF_B,36,BRE)}
+ t=applyBinds(t,BDEFS.filter(b=>optOn(b[0])),S.binds,DEF_B,36,BRE);
+ if(S.opts.radar===false)t=t.replace(/^bind\s+"[^"]*"\s+"toggle cl_radar_scale 1 0\.4".*\r?\n/m,'');
+ if(S.opts.jump===false)t=t.replace(/^bind\s+mwheelup\s+\+jump.*\r?\n/m,'').replace(/^bind\s+mwheeldown\s+\+jump.*\r?\n/m,'').replace(/^\/\/ ===== MOVIMENTAÇÃO =====\r?\n\r?\n?/m,'');
+ return t}
 function buildTreino(){const t=(S.cfgs&&S.cfgs.treino)||'';return t?applyBinds(t,TDEFS,S.tbinds,DEF_T,47,TRE):''}
 const SP={Backquote:'`',Space:'space',Tab:'tab',CapsLock:'capslock',Enter:'enter',Backspace:'backspace',ArrowUp:'uparrow',ArrowDown:'downarrow',ArrowLeft:'leftarrow',ArrowRight:'rightarrow',Delete:'del',Insert:'ins',Home:'home',End:'end',PageUp:'pgup',PageDown:'pgdn',ShiftLeft:'shift',ShiftRight:'rshift',ControlLeft:'ctrl',ControlRight:'rctrl',AltLeft:'alt',AltRight:'ralt',Minus:'-',Equal:'=',BracketLeft:'[',BracketRight:']',Semicolon:'semicolon',Quote:"'",Comma:',',Period:'.',Slash:'/'};
 function keyFromEvent(e){const c=e.code;if(/^Key[A-Z]$/.test(c))return c[3].toLowerCase();if(/^Digit\d$/.test(c))return c[5];if(/^F\d{1,2}$/.test(c))return c.toLowerCase();return SP[c]||null}
-function loadPrefs(){try{const p=JSON.parse(localStorage.getItem('lb')||'{}');S.cfgName=p.cfgName||'';S.sens=p.sens||'1.272727';S.binds={...DEF_B,...(p.binds||{})};S.tName=p.tName==null?'treino':p.tName;S.tbinds={...DEF_T,...(p.tbinds||{})};S.theme=p.theme||{...DEF_THEME};S.lang=p.lang||defLang()}catch{S.cfgName='';S.sens='1.272727';S.binds={...DEF_B};S.tName='treino';S.tbinds={...DEF_T};S.theme={...DEF_THEME};S.lang=defLang()}}
-const savePrefs=()=>{try{localStorage.setItem('lb',JSON.stringify({cfgName:S.cfgName,sens:S.sens,binds:S.binds,tName:S.tName,tbinds:S.tbinds,theme:S.theme,lang:S.lang}))}catch{}};
-const CROSS='CSqvLJtn4UrvzStpGJP9PjwVCYhsA44tkbwDWbeiLZKGhF';
+function loadPrefs(){try{const p=JSON.parse(localStorage.getItem('lb')||'{}');S.cfgName=p.cfgName||'';S.sens=p.sens||'1.272727';S.binds={...DEF_B,...(p.binds||{})};S.tName=p.tName==null?'treino':p.tName;S.tbinds={...DEF_T,...(p.tbinds||{})};S.opts={...DEF_O,...(p.opts||{})};S.mira=p.mira||'donk';S.theme=p.theme||{...DEF_THEME};S.lang=p.lang||defLang()}catch{S.cfgName='';S.sens='1.272727';S.binds={...DEF_B};S.tName='treino';S.tbinds={...DEF_T};S.opts={...DEF_O};S.mira='donk';S.theme={...DEF_THEME};S.lang=defLang()}}
+const savePrefs=()=>{try{localStorage.setItem('lb',JSON.stringify({cfgName:S.cfgName,sens:S.sens,binds:S.binds,tName:S.tName,tbinds:S.tbinds,opts:S.opts,mira:S.mira,theme:S.theme,lang:S.lang}))}catch{}};
+const MIRAS=[['donk','donk','CSHMaMsuZ4tkuSMkpx6ajXU9XyuWcjcxMG5nKQKj8STPGH','#0bff00',6],
+['zywoo','ZywOo','CSH2Rx7cGRU5apQ4VSnZwjsr9RyLEiOrCAaVYWYvW6dz7H','#00ffff',11],
+['s1mple','s1mple','CSGO-xmhFf-OsHJc-KZnPO-Kb6h6-bSC6Q','#ffffff',6],
+['m0nesy','m0NESY','CSHZJowmcXaUVz57pSOTSCRPU5x887Wq65OuOGCVi9JDAA','#00ffd9',6],
+['niko','NiKo','CS7y6nxCz8ivDjMczcJLnjXWPNowD2Dpa6dfPFK5QhC3ze','#00ffa9',7],
+['xantares','XANTARES','CSbTEaGDR5GhNAifhXfx8dnavVdRCvsLSCeTDvSS8ndJQE','#32fa32',27],
+['ropz','ropz','CSUxjvBKxbaTKG5sfdufqzDvzeAiaTuveQmT6XFOvWmvAc','#00ff00',11],
+['kyousuke','kyousuke','CSHZJowmcXaUVz57pSOTSCRPU5x887Wq65OuOGCVi9JDAA','#00ffd9',6]];
+const miraCur=()=>MIRAS.find(m=>m[0]===S.mira)||MIRAS[0];
+function mirasHtml(){const m=miraCur();return `<div class="mpl">${MIRAS.map(x=>`<button class="mp ${x[0]===m[0]?'on':''}" data-mira="${x[0]}"><span class="mt" style="width:${x[4]%2?29:28}px;height:${x[4]%2?29:28}px"><img src="miras/${x[0]}.png" alt="" width="${x[4]}" height="${x[4]}" style="left:${((x[4]%2?29:28)-x[4])/2}px;top:${((x[4]%2?29:28)-x[4])/2}px"></span><span>${esc(x[1])}</span></button>`).join('')}</div>
+<div class="mprev"><div class="mstage" style="--mc:${m[3]}"><img class="mimg" src="miras/${m[0]}.png" alt="Mira de ${esc(m[1])}" style="width:${m[4]*4}px;height:${m[4]*4}px"></div><div class="mtx"><b>${esc(m[1])}</b><code class="cd">${esc(m[2])}</code><p class="mu sm">No CS2: Configurações → Jogo → Mira → Importar</p><button class="btn" data-copy="cross">Copiar código da mira</button></div></div>`}
 function toast(m,t){const e=document.createElement('div');e.className='tt '+(t||'');e.textContent=tr(m);$('#toast').append(e);setTimeout(()=>{e.classList.add('out');setTimeout(()=>e.remove(),300)},2600)}
 function count(el,to){const t0=performance.now();(function f(t){const p=Math.min((t-t0)/900,1);el.textContent=Math.round(to*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(f)})(t0)}
 async function busy(b,fn){b.classList.add('ld');b.disabled=true;try{return await fn()}finally{b.classList.remove('ld');b.disabled=false}}
@@ -223,17 +251,18 @@ home(){const s=S.sys||{},ram=s.memType?`${s.ram} GB ${s.memType}`:`${s.ram} GB`,
 <div class="tri"><div class="card st"><h3>Sistema Operacional</h3><div class="rw">SO<b>${esc(s.os||'Windows')}</b></div><div class="rw">Versão<b>${esc(s.ver||'—')}</b></div><div class="rw">Disco<b>${esc(s.disk||'—')}</b></div><div class="rw">Memória<b>${esc(ram)}${s.memMods?' · '+s.memMods+' pente(s)':''}</b></div><div class="rw">Frequência da RAM<b>${esc(mhz)}</b></div></div>
 <div class="card st"><h3>Status de Otimização</h3><div class="rg"><svg viewBox="0 0 100 100"><circle class="bgc" cx="50" cy="50" r="42"/><circle class="fg" id="ring" cx="50" cy="50" r="42"/></svg><div><div class="rw" style="border:0">Ajustes disponíveis<b>${S.tweaks.length}</b></div><div class="rw">Ajustes ativos<b id="na">0</b></div><div class="rw">Nível de otimização<b><span id="nl">0</span>%</b></div></div></div></div>
 <div class="card st"><h3>Atalhos</h3>${[['opt','bolt','Otimizações'],['clean','trash','Limpeza'],['health','pulse','Saúde do PC'],['drivers','chip','Drivers']].map(([p,i,l])=>`<button class="qa" data-go="${p}">${ico(i)}${l}</button>`).join('')}</div></div>`},
-cs2(){return `<div class="st"><h1>CS2</h1><p class="mu">Tudo pronto para o seu jogo: inicialização, mira e configs</p></div>
-<div class="two"><div class="card st"><h3>Opções de inicialização</h3><code class="cd" id="cmd">${launch()}</code><p class="mu sm">O nome depois de +exec é o que você escrever em "Nome da cfg" na config principal abaixo. Steam → Biblioteca → CS2 → Propriedades → Geral → Opções de inicialização</p><button class="btn" data-copy="launch">Copiar comando</button></div>
-<div class="card st"><h3>Mira</h3><code class="cd">${CROSS}</code><p class="mu sm">No CS2: Configurações → Jogo → Mira → Importar</p><button class="btn" data-copy="cross">Copiar mira</button></div></div>
-<div class="head2 st" style="margin:22px 0 12px"><div><h3 style="margin:0">Configs</h3><p class="mu sm" style="margin:4px 0 0">Instaladas direto na pasta do CS2 (game\\csgo\\cfg)</p></div><button class="btn" id="cfgall">Instalar as duas</button></div>
-<div class="card st"><h3>Config principal</h3><p class="mu sm">Escreva o nome da sua cfg, ajuste a sensibilidade e as teclas, e instale direto na pasta do jogo.</p>
+cs2(){return `<div class="opH st"><div class="opT"><span class="ptile"><span class="cs2i" style="width:22px;height:22px"></span></span><div><h1>CS2</h1><p class="mu">Tudo pronto para o seu jogo: inicialização, mira e configs</p></div></div></div>
+<div class="two cs2g"><div class="card cs2c cl1 st"><div class="cs2h"><span class="mi2">${ico('play')}</span><h3>Opções de inicialização</h3></div><div class="fld"><label>Nome da cfg</label><input id="lcfg" class="inp" maxlength="30" placeholder="ex: minhacfg" value="${esc(S.cfgName)}"><span class="mu">.cfg</span></div><code class="cd" id="cmd">${launchHtml()}</code><p class="mu sm">O nome depois de +exec é o que você escrever em "Nome da cfg" (o campo da config principal acompanha este). Steam → Biblioteca → CS2 → Propriedades → Geral → Opções de inicialização</p><button class="btn" data-copy="launch">Copiar comando</button></div>
+<div class="card cs2c cl2 st"><div class="cs2h"><span class="mi2">${ico('star')}</span><h3>Miras</h3></div><div id="miras">${mirasHtml()}</div></div></div>
+<div class="cs2sec st"><div><h3>Configs</h3><p class="mu sm" style="margin:4px 0 0">Instaladas direto na pasta do CS2 (game\\csgo\\cfg)</p></div><button class="btn" id="cfgall">Instalar as duas</button></div>
+<div class="card cs2c cl3 st"><div class="cs2h"><span class="mi2">${ico('sliders')}</span><h3>Config principal</h3></div><p class="mu sm">Escreva o nome da sua cfg, ajuste a sensibilidade e as teclas, e instale direto na pasta do jogo.</p>
 <div class="fld"><label>Nome da cfg</label><input id="cfgname" class="inp" maxlength="30" placeholder="ex: minhacfg" value="${esc(S.cfgName)}"><span class="mu">.cfg</span></div>
 <div class="fld"><label>Sensibilidade</label><input id="sens" class="inp" style="max-width:170px" inputmode="decimal" maxlength="10" value="${esc(S.sens)}"></div>
-<div class="bgrid">${BDEFS.map(b=>`<div class="brow"><span>${b[1]}</span><button class="kc" data-bind="${b[0]}">${esc(keyLabel(S.binds[b[0]]))}</button></div>`).join('')}</div>
-<p class="mu sm" style="margin:0 0 12px">Clique na tecla e aperte o novo botão (teclado, mouse ou roda). Esc cancela.</p>
+<div class="bgrid">${BDEFS.filter(b=>!isOpt(b[0])).map(b=>`<div class="brow"><span>${b[1]}</span><button class="kc" data-bind="${b[0]}">${esc(keyLabel(S.binds[b[0]]))}</button></div>`).join('')}</div>
+<div id="xopts">${xoptsHtml()}</div>
+<p class="mu sm" style="margin:0 0 12px">Clique na tecla e aperte o novo botão (teclado, mouse ou roda). Esc cancela. Opção desativada: a cfg não inclui essa bind.</p>
 <div class="bar" style="justify-content:flex-start;margin:0 0 6px"><button class="btn" data-ci="principal">Instalar</button><button class="btn alt" data-copy="cfg:principal">Copiar</button><button class="btn alt" id="bdef">Restaurar padrão</button></div><pre class="pre" id="cfg-principal">Carregando...</pre></div>
-<div class="card st" style="margin-top:12px"><h3>Config de treino</h3><p class="mu sm">Para treinar offline com bots parados: cheats, dinheiro máximo, compra em qualquer lugar, noclip, repetir granada e velocidade do jogo. Use em mapa local e, no console do jogo, digite <b id="tex">exec ${esc(tname()||'nomedacfg')}</b>.</p>
+<div class="card cs2c cl3 st" style="margin-top:12px"><div class="cs2h"><span class="mi2">${ico('gauge')}</span><h3>Config de treino</h3></div><p class="mu sm">Para treinar offline com bots parados: cheats, dinheiro máximo, compra em qualquer lugar, noclip, repetir granada e velocidade do jogo. Use em mapa local e, no console do jogo, digite <b id="tex">exec ${esc(tname()||'nomedacfg')}</b>.</p>
 <div class="fld"><label>Nome da cfg</label><input id="tname" class="inp" maxlength="30" placeholder="ex: treino" value="${esc(S.tName)}"><span class="mu">.cfg</span></div>
 <div class="bgrid">${TDEFS.map(b=>`<div class="brow"><span>${b[1]}</span><button class="kc" data-grp="t" data-bind="${b[0]}">${esc(keyLabel(S.tbinds[b[0]]))}</button></div>`).join('')}</div>
 <p class="mu sm" style="margin:0 0 12px">Clique na tecla e aperte o novo botão (teclado, mouse ou roda). Esc cancela.</p>
@@ -257,8 +286,10 @@ function stag(){document.querySelectorAll('.st').forEach((e,i)=>e.style.setPrope
 function go(p){page=p;document.querySelectorAll('.nv').forEach(b=>b.classList.toggle('on',b.dataset.p===p));const nb=document.querySelector('.nv.on'),ind=$('#ind');if(nb&&ind){ind.style.height=nb.offsetHeight+'px';ind.style.transform=`translateY(${nb.offsetTop}px)`}$('#view').innerHTML=PG[p]();i18n($('#view'));if(p==='opt')grid();if(p==='apps')loadApps();if(p==='health')loadHealth();if(p==='drivers')loadDrivers();if(p==='cs2')loadCfg();if(p==='cfg')thumbPos();stag();
  if(p==='home')requestAnimationFrame(()=>{$('#ring').style.strokeDashoffset=264*(1-lvl()/100);count($('#na'),S.applied.size);count($('#nl'),lvl())})}
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-document.addEventListener('mousemove',e=>{const c=e.target.closest&&e.target.closest('.card');if(!c)return;const r=c.getBoundingClientRect();c.style.setProperty('--mx',(e.clientX-r.left)+'px');c.style.setProperty('--my',(e.clientY-r.top)+'px')});
+{const SEL='.card,.ht,.bhero,.csum,.dcard,.ccard,.binfo';let ms=[],mx=0,my=0,mr=0;document.addEventListener('mousemove',e=>{const t=e.target.closest&&e.target.closest(SEL);if(!t)return;ms=[];for(let n=t;n;n=n.parentElement)if(n.matches&&n.matches(SEL))ms.push(n);mx=e.clientX;my=e.clientY;if(!mr)mr=requestAnimationFrame(()=>{mr=0;for(const c of ms){const r=c.getBoundingClientRect();c.style.setProperty('--mx',(mx-r.left)+'px');c.style.setProperty('--my',(my-r.top)+'px')}})},{passive:true})};
 async function cfgData(){S.cfgs=S.cfgs||{};for(const id of['principal','treino'])if(S.cfgs[id]==null)S.cfgs[id]=(await api.cs2Cfg(id)).replace(/\r\n/g,'\n')}
+function xoptsHtml(){const sw=(k,t,d)=>`<div class="row"><div><b>${t}</b><small>${d}</small></div><div class="sw ${S.opts[k]!==false?'on':''}" data-opt="${k}"></div></div>`,kb=(id,l)=>`<div class="row sub"><span>${l}</span><button class="kc" data-bind="${id}">${esc(keyLabel(S.binds[id]))}</button></div>`;
+ return `<div class="xopt">${sw('jump','Pular no scroll','Rolar a roda do mouse pula (bhop).')}${S.opts.jump!==false?kb('jumpup','Rolar para cima')+kb('jumpdown','Rolar para baixo'):''}${sw('radar','Zoom do radar','Uma tecla alterna o zoom do radar entre 1 e 0.4.')}${S.opts.radar!==false?kb('radar','Tecla do zoom do radar'):''}</div>`}
 function prev(){const e=$('#cfg-principal');if(e&&S.cfgs&&S.cfgs.principal!=null)e.textContent=buildCfg();const t=$('#cfg-treino');if(t&&S.cfgs&&S.cfgs.treino!=null)t.textContent=buildTreino()}
 async function loadCfg(){await cfgData();prev()}
 let cap=null;
@@ -310,7 +341,7 @@ function appGrid(){if(page!=='apps'||S.appTab==='bl'||S.appTab==='hub'||!$('#aq'
  $('#ap-sub').textContent=tf('Navegue e gerencie {0} aplicativos instalados',S.appList.length);
  const g=$('#apgrid');g.innerHTML=l.map((a,i)=>`<div class="card apc st ${S.sel.has(a.id)?'on':''}" data-ap="${a.id}" style="--i:${Math.min(i,10)}"><div class="ck"></div><div class="av">${esc(a.n[0].toUpperCase())}</div><div><b>${esc(a.n)}</b><small>${esc([a.p,a.v].filter(Boolean).join(' · '))}${a.s?' · '+a.s+' MB':''}</small></div></div>`).join('')||'<div class="big">Nenhum app encontrado.</div>';i18n(g);selUp()}
 function selUp(){const p=$('#ap-sel');if(!p)return;const n=S.appTab==='bl'?(S.selB?S.selB.size:0):(S.sel?S.sel.size:0);p.textContent=tf('{0} selecionados',n);p.classList.toggle('on',n>0)}
-document.addEventListener('input',e=>{if(e.target.id==='q'){S.q=e.target.value;grid()}if(e.target.id==='aq')appGrid();if(e.target.id==='cfgname'){S.cfgName=e.target.value.replace(/[^\w-]/g,'');savePrefs();const m=$('#cmd');if(m)m.textContent=launch()}if(e.target.id==='tname'){S.tName=e.target.value.replace(/[^\w-]/g,'');savePrefs();const x=$('#tex');if(x)x.textContent='exec '+(tname()||'nomedacfg')}if(e.target.id==='sens'){S.sens=e.target.value.replace(',','.').replace(/[^\d.]/g,'');savePrefs();prev()}});
+document.addEventListener('input',e=>{if(e.target.id==='q'){S.q=e.target.value;grid()}if(e.target.id==='aq')appGrid();if(e.target.id==='cfgname'||e.target.id==='lcfg'){S.cfgName=e.target.value.replace(/[^\w-]/g,'');savePrefs();for(const i of['cfgname','lcfg']){const f=$('#'+i);if(f&&f!==e.target&&f.value!==S.cfgName)f.value=S.cfgName}const m=$('#cmd');if(m)m.innerHTML=launchHtml()}if(e.target.id==='tname'){S.tName=e.target.value.replace(/[^\w-]/g,'');savePrefs();const x=$('#tex');if(x)x.textContent='exec '+(tname()||'nomedacfg')}if(e.target.id==='sens'){S.sens=e.target.value.replace(',','.').replace(/[^\d.]/g,'');savePrefs();prev()}});
 document.addEventListener('click',async e=>{const c=s=>e.target.closest(s);let el;
  if(el=c('#langbtn')){$('#langmenu').classList.toggle('on');return}
  if(el=c('[data-lang]')){S.lang=el.dataset.lang;savePrefs();renderLang();renderNav();renderWarn();go(page);return}
@@ -322,9 +353,11 @@ document.addEventListener('click',async e=>{const c=s=>e.target.closest(s);let e
  if(el=c('#doclean')||c('#cleanall')){const all=el.id==='cleanall',ids=all?CLEAN.map(x=>x[0]):[...cl];if(!ids.length)return toast('Selecione ao menos uma opção.','err');if(all&&!confirm('Limpar tudo, incluindo a Lixeira? Os arquivos da Lixeira serão apagados definitivamente.'))return;return busy(el,async()=>{const r=await api.clean(ids);S.lastClean=Date.now();const ok=Object.values(r).filter(Boolean).length;toast(tf('{0} de {1} limpezas concluídas',ok,ids.length),ok<ids.length?'err':'');cl.clear();S.cscan=null;go('clean')})}
  if(el=c('#rec'))return applyRecommended(el);
  if(el=c('[data-r]'))return busy(el,async()=>{const a=el.dataset.r,ok=await api.restore(a);if(a==='revert')S.applied.clear();toast(ok?(a==='create'?'Ponto criado!':a==='revert'?'Ajustes revertidos':'Abrindo...'):'Não foi possível (o Windows limita 1 ponto a cada 24h).',ok?'':'err');if(a==='revert')go('rest')});
+ if(el=c('.sw[data-opt]')){stopCap();const k=el.dataset.opt;S.opts[k]=S.opts[k]===false;savePrefs();$('#xopts').innerHTML=xoptsHtml();i18n($('#xopts'));return prev()}
+ if(el=c('[data-mira]')){S.mira=el.dataset.mira;savePrefs();$('#miras').innerHTML=mirasHtml();return i18n($('#miras'))}
  if(el=c('.kc'))return startCap(el);
- if(el=c('#bdef')){S.binds={...DEF_B};S.sens='1.272727';savePrefs();return go('cs2')}
- if(el=c('[data-copy]')){const k=el.dataset.copy;let t;if(k==='launch')t=launch();else if(k==='cross')t=CROSS;else{await cfgData();t=k==='cfg:principal'?buildCfg():buildTreino()}await api.copy(t);return toast('Copiado!')}
+ if(el=c('#bdef')){S.binds={...DEF_B};S.opts={...DEF_O};S.sens='1.272727';savePrefs();return go('cs2')}
+ if(el=c('[data-copy]')){const k=el.dataset.copy;let t;if(k==='launch')t=launch();else if(k==='cross')t=miraCur()[2];else{await cfgData();t=k==='cfg:principal'?buildCfg():buildTreino()}await api.copy(t);return toast('Copiado!')}
  if(el=c('#tdef')){S.tbinds={...DEF_T};S.tName='treino';savePrefs();return go('cs2')}
  if(el=c('[data-th]')){const [a,b]=el.dataset.th.split(',').map(Number);S.theme={...S.theme,h:a,s:b};applyTheme(S.theme);thumbPos();savePrefs();return syncBar()}
  if(el=c('#thr')){S.theme={...DEF_THEME,mode:S.theme.mode};applyTheme(S.theme);thumbPos();savePrefs();return syncBar()}
