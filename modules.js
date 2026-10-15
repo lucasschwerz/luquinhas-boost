@@ -20,7 +20,14 @@ module.exports = function (X) {
     try { new Notification({ title: 'Luquinhas Boost', body: `Limpeza automática: ${ok} de ${items.length} itens concluídos.` }).show(); } catch {}
     return { ok, total: items.length };
   }
-  function checkDue() { const a = autoGet(), d = DAYS[a.freq]; if (d && a.items.length && Date.now() - (a.last || 0) >= d * 86400000) runAuto(); }
+  // A limpeza automática usa o disco: se um jogo estiver aberto, ela espera (tenta de novo a cada 30 min) para não causar travadas.
+  const gameRunning = () => new Promise(res => execFile('tasklist', ['/FO', 'CSV', '/NH'], { windowsHide: true, timeout: 8000, maxBuffer: 1 << 24 }, (e, o) => res(!e && /"(cs2|csgo|valorant-win64-shipping)\.exe"/i.test(String(o)))));
+  async function checkDue() {
+    const a = autoGet(), d = DAYS[a.freq];
+    if (!(d && a.items.length && Date.now() - (a.last || 0) >= d * 86400000)) return;
+    if (await gameRunning()) { try { log('limpeza automática adiada: jogo em execução'); } catch {} return; }
+    runAuto();
+  }
   function ensureTray() {
     if (tray && !tray.isDestroyed()) return;
     let img = nativeImage.createFromPath(path.join(__dirname, process.platform === 'win32' ? 'icon.ico' : 'icon.png'));

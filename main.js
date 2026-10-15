@@ -2,6 +2,11 @@ const { app, BrowserWindow, ipcMain, shell, dialog, clipboard } = require('elect
 const path = require('path'), fs = require('fs'), os = require('os');
 const { exec, execFile, spawn } = require('child_process');
 
+// Prioridade abaixo do normal: se o PC estiver no limite (jogando), o jogo sempre tem preferência da CPU.
+const lowPriority = () => {
+  const P = os.constants.priority.PRIORITY_BELOW_NORMAL, set = pid => { try { os.setPriority(pid, P); } catch {} };
+  set(process.pid); try { for (const x of app.getAppMetrics()) set(x.pid); } catch {}
+};
 const BRAND = 'Luquinhas Boost';
 const GITHUB_REPO = 'lucasschwerz/luquinhas-boost'; // usuario/repositorio do GitHub (aviso de atualizacao)
 const DISCORD = ''; // cole aqui o link do seu servidor (ex: https://discord.gg/xxxx)
@@ -24,22 +29,15 @@ const cfgPath = () => path.join(app.getPath('userData'), 'cfg.json');
 const load = () => { try { return JSON.parse(fs.readFileSync(cfgPath(), 'utf8')); } catch { return {}; } };
 const save = c => { try { fs.writeFileSync(cfgPath(), JSON.stringify(c)); } catch {} };
 
-const tick = () => new Promise(r => setImmediate(r));
-async function wipe(dir, filter = () => true) {
-  let l; try { l = await fs.promises.readdir(dir); } catch { return true; }
-  let n = 0;
-  for (const f of l) {
-    if (!filter(f)) continue;
-    try { await fs.promises.rm(path.join(dir, f), { recursive: true, force: true }); } catch {}
-    if (++n % 25 === 0) await tick();
-  }
+function wipe(dir, filter = () => true) {
+  try { for (const f of fs.readdirSync(dir)) if (filter(f)) try { fs.rmSync(path.join(dir, f), { recursive: true, force: true }); } catch {} } catch {}
   return true;
 }
 const clean = {
-  temp: async () => (await wipe(os.tmpdir()), await wipe('C:\\Windows\\Temp')),
+  temp: async () => (wipe(os.tmpdir()), wipe('C:\\Windows\\Temp')),
   prefetch: async () => wipe('C:\\Windows\\Prefetch'),
   bin: async () => (await ps('Clear-RecycleBin -Force -ErrorAction SilentlyContinue')).ok,
-  wu: async () => { await run('net stop wuauserv'); await wipe('C:\\Windows\\SoftwareDistribution\\Download'); return run('net start wuauserv'); },
+  wu: async () => { await run('net stop wuauserv'); wipe('C:\\Windows\\SoftwareDistribution\\Download'); return run('net start wuauserv'); },
   thumbs: async () => wipe(path.join(process.env.LOCALAPPDATA || '', 'Microsoft\\Windows\\Explorer'), f => /^thumbcache_.*\.db$/i.test(f)),
 };
 
@@ -66,28 +64,28 @@ const discordCfg = () => path.join(APPD, 'discord', 'settings.json');
 const setDiscordHW = v => { try { const f = discordCfg(); let j = {}; try { j = JSON.parse(fs.readFileSync(f, 'utf8')); } catch {} j.enableHardwareAcceleration = v; fs.writeFileSync(f, JSON.stringify(j, null, 2)); return { ok: true }; } catch { return { ok: false, err: 'Não consegui editar o settings.json do Discord.' }; } };
 
 const T = [
-  { id: 'power', fps: 1, star: 1, n: 'Plano de Energia Alto Desempenho', d: 'Mantém a CPU em clock máximo durante as partidas.', c: ['Desempenho', 'Gaming'],
+  { id: 'power', fps: 1, star: 1, n: 'Plano de Energia Alto Desempenho', d: 'Mantém a CPU em clock máximo durante as partidas.', c: ['Desempenho'],
     chkFn: async () => /8c5e7fda/i.test(await out('powercfg', ['/getactivescheme'])),
     on: ['powercfg /setactive 8c5e7fda-e8bf-4a96-9a85-a6e23a8c635c'], off: ['powercfg /setactive 381b4222-f694-41f0-9685-ff5bb260df2e'] },
-  { id: 'gamemode', fps: 1, star: 1, n: 'Ativar Modo de Jogo', d: 'Prioriza o jogo e reduz interferência do Windows.', c: ['Gaming'], chk: [[GB, 'AutoGameModeEnabled', 1]],
+  { id: 'gamemode', fps: 1, star: 1, n: 'Ativar Modo de Jogo', d: 'Prioriza o jogo e reduz interferência do Windows.', c: ['Desempenho'], chk: [[GB, 'AutoGameModeEnabled', 1]],
     on: [R(GB, 'AutoGameModeEnabled', 'REG_DWORD', 1)], off: [R(GB, 'AutoGameModeEnabled', 'REG_DWORD', 0)] },
-  { id: 'dvr', fps: 1, star: 1, n: 'Desativar Game DVR / Captura', d: 'Desliga a gravação em segundo plano da Xbox Game Bar.', c: ['Gaming', 'Privacidade'], chk: [[GCS, 'GameDVR_Enabled', 0], [GDVR, 'AppCaptureEnabled', 0]],
+  { id: 'dvr', fps: 1, star: 1, n: 'Desativar Game DVR / Captura', d: 'Desliga a gravação em segundo plano da Xbox Game Bar.', c: ['Desempenho', 'Privacidade'], chk: [[GCS, 'GameDVR_Enabled', 0], [GDVR, 'AppCaptureEnabled', 0]],
     on: [R(GCS, 'GameDVR_Enabled', 'REG_DWORD', 0), R(GDVR, 'AppCaptureEnabled', 'REG_DWORD', 0)], off: [R(GCS, 'GameDVR_Enabled', 'REG_DWORD', 1), R(GDVR, 'AppCaptureEnabled', 'REG_DWORD', 1)] },
-  { id: 'mouse', star: 1, n: 'Desativar Aceleração do Mouse', d: 'Mira consistente. Vale após reiniciar a sessão do Windows.', c: ['Gaming'], chk: [[MS, 'MouseSpeed', '0'], [MS, 'MouseThreshold1', '0'], [MS, 'MouseThreshold2', '0']],
+  { id: 'mouse', star: 1, n: 'Desativar Aceleração do Mouse', d: 'Mira consistente. Vale após reiniciar a sessão do Windows.', c: ['Desempenho'], chk: [[MS, 'MouseSpeed', '0'], [MS, 'MouseThreshold1', '0'], [MS, 'MouseThreshold2', '0']],
     on: [R(MS, 'MouseSpeed', 'REG_SZ', 0), R(MS, 'MouseThreshold1', 'REG_SZ', 0), R(MS, 'MouseThreshold2', 'REG_SZ', 0)],
     off: [R(MS, 'MouseSpeed', 'REG_SZ', 1), R(MS, 'MouseThreshold1', 'REG_SZ', 6), R(MS, 'MouseThreshold2', 'REG_SZ', 10)] },
-  { id: 'sticky', star: 1, n: 'Bloquear Pop-ups de Teclas de Aderência', d: 'Chega de janela do Shift atrapalhando no meio do round.', c: ['Gaming'], chk: [[AC + 'StickyKeys', 'Flags', '506']],
+  { id: 'sticky', star: 1, n: 'Bloquear Pop-ups de Teclas de Aderência', d: 'Chega de janela do Shift atrapalhando no meio do round.', c: ['Desempenho'], chk: [[AC + 'StickyKeys', 'Flags', '506']],
     on: [R(AC + 'StickyKeys', 'Flags', 'REG_SZ', 506), R(AC + 'Keyboard Response', 'Flags', 'REG_SZ', 122), R(AC + 'ToggleKeys', 'Flags', 'REG_SZ', 58)],
     off: [R(AC + 'StickyKeys', 'Flags', 'REG_SZ', 510), R(AC + 'Keyboard Response', 'Flags', 'REG_SZ', 126), R(AC + 'ToggleKeys', 'Flags', 'REG_SZ', 62)] },
-  { id: 'hags', fps: 1, admin: 1, reboot: 1, n: 'Ativar Agendamento de GPU por Hardware (HAGS)', d: 'Deixa a GPU gerenciar a própria memória de vídeo. Exige reinício.', c: ['Gaming', 'Desempenho'],
+  { id: 'hags', fps: 1, admin: 1, reboot: 1, n: 'Ativar Agendamento de GPU por Hardware (HAGS)', d: 'Deixa a GPU gerenciar a própria memória de vídeo. Exige reinício.', c: ['Desempenho'],
     warn: 'Em alguns drivers pode causar instabilidade; se acontecer, desligue.', chk: [[GD, 'HwSchMode', 2]],
     compat: async () => (await regGet(GD, 'HwSchMode')) === null ? 'Sua GPU/driver não expõe o HAGS neste PC.' : null,
     on: [R(GD, 'HwSchMode', 'REG_DWORD', 2)], off: [R(GD, 'HwSchMode', 'REG_DWORD', 1)] },
-  { id: 'winmode', fps: 1, n: 'Otimizar Jogos em Janela e Sem Bordas', d: 'Ativa as otimizações do Windows 11 para jogos em janela (22H2 ou mais novo).', c: ['Gaming'],
+  { id: 'winmode', fps: 1, n: 'Otimizar Jogos em Janela e Sem Bordas', d: 'Ativa as otimizações do Windows 11 para jogos em janela (22H2 ou mais novo).', c: ['Desempenho'],
     compat: c => c.build >= 22621 ? null : 'Exige Windows 11 22H2 ou mais novo.',
     chkFn: async () => /SwapEffectUpgradeEnable=1/.test(String(await regGet(UGP, 'DirectXUserGlobalSettings') || '')),
     on: [R(UGP, 'DirectXUserGlobalSettings', 'REG_SZ', '"SwapEffectUpgradeEnable=1;"')], off: [R(UGP, 'DirectXUserGlobalSettings', 'REG_SZ', '"SwapEffectUpgradeEnable=0;"')] },
-  { id: 'gamesgen', fps: 1, star: 1, admin: 1, n: 'Otimizações Gerais para Jogos (prioridade multimídia)', d: 'Dá prioridade de CPU/GPU às tarefas de jogo no agendador multimídia do Windows.', c: ['Gaming', 'Desempenho'],
+  { id: 'gamesgen', fps: 1, star: 1, admin: 1, n: 'Otimizações Gerais para Jogos (prioridade multimídia)', d: 'Dá prioridade de CPU/GPU às tarefas de jogo no agendador multimídia do Windows.', c: ['Desempenho'],
     warn: 'Ganho pequeno; aumenta um pouco a prioridade dos jogos sobre programas em segundo plano.', chk: [[SYSP, 'SystemResponsiveness', 0], [GAMES, 'Priority', 6]],
     on: [R(SYSP, 'SystemResponsiveness', 'REG_DWORD', 0), R(GAMES, 'GPU Priority', 'REG_DWORD', 8), R(GAMES, 'Priority', 'REG_DWORD', 6), R(GAMES, 'Scheduling Category', 'REG_SZ', 'High'), R(GAMES, 'SFIO Priority', 'REG_SZ', 'High')],
     off: [R(SYSP, 'SystemResponsiveness', 'REG_DWORD', 20), R(GAMES, 'GPU Priority', 'REG_DWORD', 8), R(GAMES, 'Priority', 'REG_DWORD', 2), R(GAMES, 'Scheduling Category', 'REG_SZ', 'Medium'), R(GAMES, 'SFIO Priority', 'REG_SZ', 'Normal')] },
@@ -98,10 +96,10 @@ const T = [
     off: [R(VFX, 'VisualFXSetting', 'REG_DWORD', 0), R('HKCU\\Control Panel\\Desktop\\WindowMetrics', 'MinAnimate', 'REG_SZ', 1), R(EXA, 'TaskbarAnimations', 'REG_DWORD', 1), R(EXA, 'ListviewAlphaSelect', 'REG_DWORD', 1), R(EXA, 'ListviewShadow', 'REG_DWORD', 1), R('HKCU\\Software\\Microsoft\\Windows\\DWM', 'EnableAeroPeek', 'REG_DWORD', 1)] },
   { id: 'transp', fps: 1, n: 'Desativar Transparências', d: 'Interface do Windows mais leve.', c: ['Aparência', 'Desempenho'], chk: [[CU + 'Themes\\Personalize', 'EnableTransparency', 0]],
     on: [R(CU + 'Themes\\Personalize', 'EnableTransparency', 'REG_DWORD', 0)], off: [R(CU + 'Themes\\Personalize', 'EnableTransparency', 'REG_DWORD', 1)] },
-  { id: 'network', admin: 1, n: 'Otimizações de Rede', d: 'Remove o limite de rede do agendador multimídia, desliga o envio de atualizações para outros PCs (Delivery Optimization) e limpa o cache de DNS.', c: ['Geral', 'Desempenho'],
+  { id: 'network', admin: 1, n: 'Otimizações de Rede', d: 'Remove o limite de rede do agendador multimídia, desliga o envio de atualizações para outros PCs (Delivery Optimization) e limpa o cache de DNS.', c: ['Desempenho'],
     chk: [[SYSP, 'NetworkThrottlingIndex', 4294967295], [DOK, 'DODownloadMode', 0]],
     on: [R(SYSP, 'NetworkThrottlingIndex', 'REG_DWORD', 4294967295), R(DOK, 'DODownloadMode', 'REG_DWORD', 0), 'ipconfig /flushdns'], off: [R(SYSP, 'NetworkThrottlingIndex', 'REG_DWORD', 10), D(DOK, 'DODownloadMode')] },
-  { id: 'ntfs', admin: 1, n: 'Otimizar NTFS', d: 'Desativa o registro de "último acesso" dos arquivos, o que reduz escritas no disco.', c: ['Geral', 'Desempenho'],
+  { id: 'ntfs', admin: 1, n: 'Otimizar NTFS', d: 'Desativa o registro de "último acesso" dos arquivos, o que reduz escritas no disco.', c: ['Desempenho'],
     chkFn: async () => { const m = (await out('fsutil', ['behavior', 'query', 'disablelastaccess'])).match(/=\s*(\d)/); return m ? (m[1] === '1' || m[1] === '3') : null; },
     on: ['fsutil behavior set disablelastaccess 1'], off: ['fsutil behavior set disablelastaccess 2'] },
   { id: 'services', fps: 1, admin: 1, n: 'Desligar Serviços Pouco Usados', d: 'Desativa Fax, Registro Remoto, Mapas, Modo Demonstração, Relatório de Erros e telemetria (DiagTrack).', c: ['Desempenho', 'Privacidade'],
@@ -113,7 +111,7 @@ const T = [
     chk: [[DC, 'AllowTelemetry', 0], [CU + 'AdvertisingInfo', 'Enabled', 0], [CP, 'TurnOffWindowsCopilotFeature', 1]],
     on: [R(DC, 'AllowTelemetry', 'REG_DWORD', 0), R(CU + 'AdvertisingInfo', 'Enabled', 'REG_DWORD', 0), R(CP, 'TurnOffWindowsCopilotFeature', 'REG_DWORD', 1)],
     off: [D(DC, 'AllowTelemetry'), R(CU + 'AdvertisingInfo', 'Enabled', 'REG_DWORD', 1), D(CP, 'TurnOffWindowsCopilotFeature')] },
-  { id: 'ads', admin: 1, n: 'Anúncios e Bloatware (bloqueia reinstalação)', d: 'Desliga anúncios e sugestões do Windows e impede que apps promovidos voltem a se instalar. Para remover os apps já instalados, use Apps → Bloatware.', c: ['Geral', 'Privacidade'],
+  { id: 'ads', admin: 1, n: 'Anúncios e Bloatware (bloqueia reinstalação)', d: 'Desliga anúncios e sugestões do Windows e impede que apps promovidos voltem a se instalar. Para remover os apps já instalados, use Apps → Bloatware.', c: ['Privacidade'],
     chk: [[CDM, 'SystemPaneSuggestionsEnabled', 0], [CC, 'DisableWindowsConsumerFeatures', 1]],
     on: ['SystemPaneSuggestionsEnabled', 'SubscribedContent-338388Enabled', 'SubscribedContent-338389Enabled', 'SubscribedContent-353694Enabled', 'SubscribedContent-353696Enabled', 'SoftLandingEnabled', 'RotatingLockScreenOverlayEnabled'].map(v => R(CDM, v, 'REG_DWORD', 0)).concat([R(CC, 'DisableWindowsConsumerFeatures', 'REG_DWORD', 1)]),
     off: ['SystemPaneSuggestionsEnabled', 'SubscribedContent-338388Enabled', 'SubscribedContent-338389Enabled', 'SubscribedContent-353694Enabled', 'SubscribedContent-353696Enabled', 'SoftLandingEnabled', 'RotatingLockScreenOverlayEnabled'].map(v => R(CDM, v, 'REG_DWORD', 1)).concat([D(CC, 'DisableWindowsConsumerFeatures')]) },
@@ -122,26 +120,26 @@ const T = [
   { id: 'ctxmenu', n: 'Menu de Contexto Clássico (Windows 11)', d: 'Volta o menu do botão direito completo. Reinicia o Explorador de Arquivos (a barra pisca).', c: ['Aparência'], compat: win11,
     chkFn: () => regHas(CTX + '\\InprocServer32'),
     on: ['reg add "' + CTX + '\\InprocServer32" /ve /d "" /f', 'taskkill /f /im explorer.exe & start explorer.exe & exit 0'], off: ['reg delete "' + CTX + '" /f', 'taskkill /f /im explorer.exe & start explorer.exe & exit 0'] },
-  { id: 'taskbar', n: 'Barra de Tarefas à Esquerda', d: 'Alinha os ícones à esquerda (Windows 11).', c: ['Geral', 'Aparência'], compat: win11, chk: [[EXA, 'TaskbarAl', 0]],
+  { id: 'taskbar', n: 'Barra de Tarefas à Esquerda', d: 'Alinha os ícones à esquerda (Windows 11).', c: ['Aparência'], compat: win11, chk: [[EXA, 'TaskbarAl', 0]],
     on: [R(EXA, 'TaskbarAl', 'REG_DWORD', 0)], off: [R(EXA, 'TaskbarAl', 'REG_DWORD', 1)] },
   { id: 'hibernate', admin: 1, n: 'Desativar Hibernação', d: 'Remove o arquivo de hibernação e libera espaço no disco.', c: ['Desempenho'], chk: [['HKLM\\SYSTEM\\CurrentControlSet\\Control\\Power', 'HibernateEnabled', 0]],
     on: ['powercfg /h off'], off: ['powercfg /h on'] },
-  { id: 'steam', danger: 'Fecha a Steam se estiver aberta (downloads em andamento são interrompidos), apaga o cache da interface e da biblioteca e tira a Steam da inicialização do Windows. Você pode precisar entrar de novo na conta. O cache é recriado sozinho.', n: 'Otimizar Steam (biblioteca e interface)', d: 'Limpa o cache da interface/biblioteca e remove a Steam da inicialização.', c: ['Geral', 'Crítico'],
+  { id: 'steam', danger: 'Fecha a Steam se estiver aberta (downloads em andamento são interrompidos), apaga o cache da interface e da biblioteca e tira a Steam da inicialização do Windows. Você pode precisar entrar de novo na conta. O cache é recriado sozinho.', n: 'Otimizar Steam (biblioteca e interface)', d: 'Limpa o cache da interface/biblioteca e remove a Steam da inicialização.', c: ['Crítico'],
     compat: async () => (await steamPath()) ? null : 'Steam não encontrada neste PC.',
     chkFn: async () => (await regGet(CU + 'Run', 'Steam')) === null,
     on: ['taskkill /f /im steam.exe & exit 0', 'taskkill /f /im steamwebhelper.exe & exit 0',
-      async () => { for (const d of ['Steam\\htmlcache', 'Steam\\appcache\\httpcache']) await wipe(path.join(LAD, d)); const s = await steamPath(); if (s) await wipe(path.join(s, 'appcache', 'httpcache')); return { ok: true }; }, D(CU + 'Run', 'Steam')],
+      async () => { for (const d of ['Steam\\htmlcache', 'Steam\\appcache\\httpcache']) wipe(path.join(LAD, d)); const s = await steamPath(); if (s) wipe(path.join(s, 'appcache', 'httpcache')); return { ok: true }; }, D(CU + 'Run', 'Steam')],
     off: [async () => { const s = await steamPath(); if (!s) return { ok: false, err: 'Steam não encontrada.' }; return runx(`reg add "${CU}Run" /v Steam /t REG_SZ /d "\\"${s}\\steam.exe\\" -silent" /f`); }] },
-  { id: 'discord', danger: 'Fecha o Discord se estiver aberto, desliga a aceleração de hardware dele, apaga o cache e tira o Discord da inicialização. Chamadas de vídeo e transmissão de tela podem ficar mais pesadas sem a aceleração. Você pode desfazer a aceleração desligando o ajuste.', n: 'Otimizar Discord', d: 'Desliga a aceleração de hardware, limpa o cache e tira da inicialização.', c: ['Geral', 'Crítico'],
+  { id: 'discord', danger: 'Fecha o Discord se estiver aberto, desliga a aceleração de hardware dele, apaga o cache e tira o Discord da inicialização. Chamadas de vídeo e transmissão de tela podem ficar mais pesadas sem a aceleração. Você pode desfazer a aceleração desligando o ajuste.', n: 'Otimizar Discord', d: 'Desliga a aceleração de hardware, limpa o cache e tira da inicialização.', c: ['Crítico'],
     compat: () => fs.existsSync(path.join(APPD, 'discord')) ? null : 'Discord não encontrado neste PC.',
     chkFn: async () => { try { return JSON.parse(fs.readFileSync(discordCfg(), 'utf8')).enableHardwareAcceleration === false; } catch { return false; } },
-    on: ['taskkill /f /im Discord.exe & exit 0', async () => { const r = setDiscordHW(false); for (const d of ['Cache', 'Code Cache', 'GPUCache']) await wipe(path.join(APPD, 'discord', d)); return r; }, D(CU + 'Run', 'Discord')],
+    on: ['taskkill /f /im Discord.exe & exit 0', async () => { const r = setDiscordHW(false); for (const d of ['Cache', 'Code Cache', 'GPUCache']) wipe(path.join(APPD, 'discord', d)); return r; }, D(CU + 'Run', 'Discord')],
     off: [async () => setDiscordHW(true)] },
-  { id: 'onedrive', admin: 1, danger: 'Remove o OneDrive deste Windows. Arquivos que só existem na nuvem, ou pastas (Área de Trabalho, Documentos, Imagens) com backup do OneDrive ligado, podem ficar inacessíveis até você reinstalar. Desligue o backup e confirme que seus arquivos estão no PC antes de continuar.', n: 'Remover OneDrive por Completo', d: 'Desinstala o OneDrive e bloqueia a sincronização. Para desfazer, reinstala pelo winget.', c: ['Geral', 'Crítico'],
+  { id: 'onedrive', admin: 1, danger: 'Remove o OneDrive deste Windows. Arquivos que só existem na nuvem, ou pastas (Área de Trabalho, Documentos, Imagens) com backup do OneDrive ligado, podem ficar inacessíveis até você reinstalar. Desligue o backup e confirme que seus arquivos estão no PC antes de continuar.', n: 'Remover OneDrive por Completo', d: 'Desinstala o OneDrive e bloqueia a sincronização. Para desfazer, reinstala pelo winget.', c: ['Crítico'],
     chkFn: async () => !fs.existsSync(path.join(LAD, 'Microsoft', 'OneDrive', 'OneDrive.exe')) && !fs.existsSync('C:\\Program Files\\Microsoft OneDrive\\OneDrive.exe'),
     on: ['taskkill /f /im OneDrive.exe & exit 0', 'if exist "%SystemRoot%\\SysWOW64\\OneDriveSetup.exe" ("%SystemRoot%\\SysWOW64\\OneDriveSetup.exe" /uninstall) else ("%SystemRoot%\\System32\\OneDriveSetup.exe" /uninstall)', R(OD, 'DisableFileSyncNGSC', 'REG_DWORD', 1)],
     off: [D(OD, 'DisableFileSyncNGSC'), 'winget install -e --id Microsoft.OneDrive --silent --accept-package-agreements --accept-source-agreements'] },
-  { id: 'defender', admin: 1, danger: 'Deixa o PC sem proteção em tempo real contra vírus e malware. O Windows pode religar sozinho depois de um tempo ou ao reiniciar, e o comando não funciona se a Proteção contra Adulteração estiver ativa. Só faça em um PC usado apenas para jogar e tenha cuidado com o que baixa.', n: 'Desativar Proteção em Tempo Real do Defender', d: 'Desliga o monitoramento em tempo real do Microsoft Defender.', c: ['Gaming', 'Crítico'],
+  { id: 'defender', admin: 1, danger: 'Deixa o PC sem proteção em tempo real contra vírus e malware. O Windows pode religar sozinho depois de um tempo ou ao reiniciar, e o comando não funciona se a Proteção contra Adulteração estiver ativa. Só faça em um PC usado apenas para jogar e tenha cuidado com o que baixa.', n: 'Desativar Proteção em Tempo Real do Defender', d: 'Desliga o monitoramento em tempo real do Microsoft Defender.', c: ['Desempenho', 'Crítico'],
     chkFn: async () => { const o = (await ps('(Get-MpComputerStatus).RealTimeProtectionEnabled')).out; return o === 'False' ? true : o === 'True' ? false : null; },
     on: [async () => { await ps('Set-MpPreference -DisableRealtimeMonitoring $true'); const o = (await ps('(Get-MpPreference).DisableRealtimeMonitoring')).out; return o === 'True' ? { ok: true } : { ok: false, err: 'O Windows bloqueou (Proteção contra Adulteração ativa?).' }; }],
     off: [async () => psr('Set-MpPreference -DisableRealtimeMonitoring $false')] },
@@ -197,29 +195,40 @@ ipcMain.handle('init', async () => ({
   admin: await run('net session >nul 2>&1'), alwaysAdmin: !!load().alwaysAdmin, up: os.uptime(), sys: await sys(),
 }));
 ipcMain.handle('tweaks', (_e, ids, en) => apply(ids, en));
+// Varredura assíncrona (em lotes): não bloqueia o processo principal, então a janela não congela enquanto a Limpeza calcula os tamanhos.
+const fsp = fs.promises, BATCH = 16;
 async function walk(p, st) {
-  let s; try { s = await fs.promises.lstat(p); } catch { return; }
+  let s; try { s = await fsp.lstat(p); } catch { return; }
   if (s.isDirectory()) {
-    let l; try { l = await fs.promises.readdir(p); } catch { return; }
-    for (const f of l) { if (st.n++ > 200000) return; if (st.n % 200 === 0) await tick(); await walk(path.join(p, f), st); }
+    let l; try { l = await fsp.readdir(p); } catch { return; }
+    for (let i = 0; i < l.length; i += BATCH) {
+      if (st.n > 200000) return;
+      const part = l.slice(i, i + BATCH); st.n += part.length;
+      await Promise.all(part.map(f => walk(path.join(p, f), st)));
+    }
   } else { st.size += s.size; st.count++; }
 }
 async function dirStat(dirs, filter = () => true) {
   const st = { size: 0, count: 0, n: 0 };
-  for (const d of dirs) { let l; try { l = await fs.promises.readdir(d); } catch { continue; } for (const f of l) if (filter(f)) await walk(path.join(d, f), st); }
+  for (const d of dirs) {
+    let l; try { l = await fsp.readdir(d); } catch { continue; }
+    l = l.filter(filter);
+    for (let i = 0; i < l.length; i += BATCH) { if (st.n > 200000) break; const part = l.slice(i, i + BATCH); st.n += part.length; await Promise.all(part.map(f => walk(path.join(d, f), st))); }
+  }
   return { size: st.size, count: st.count };
 }
 // tamanho e quantidade de arquivos de cada item da limpeza (so leitura, nada e apagado)
-ipcMain.handle('clean:scan', async () => {
+let scanP = null; // uma varredura por vez: trocar de aba várias vezes não empilha varreduras
+ipcMain.handle('clean:scan', () => scanP || (scanP = (async () => {
   const o = {};
-  o.temp = await dirStat([os.tmpdir(), 'C:\\Windows\\Temp']); await tick();
-  o.prefetch = await dirStat(['C:\\Windows\\Prefetch']); await tick();
-  o.wu = await dirStat(['C:\\Windows\\SoftwareDistribution\\Download']); await tick();
-  o.thumbs = await dirStat([path.join(process.env.LOCALAPPDATA || '', 'Microsoft\\Windows\\Explorer')], f => /^thumbcache_.*\.db$/i.test(f)); await tick();
+  o.temp = await dirStat([os.tmpdir(), 'C:\\Windows\\Temp']);
+  o.prefetch = await dirStat(['C:\\Windows\\Prefetch']);
+  o.wu = await dirStat(['C:\\Windows\\SoftwareDistribution\\Download']);
+  o.thumbs = await dirStat([path.join(process.env.LOCALAPPDATA || '', 'Microsoft\\Windows\\Explorer')], f => /^thumbcache_.*\.db$/i.test(f));
   o.bin = { size: 0, count: 0 };
   try { const r = await ps("$b=(New-Object -ComObject Shell.Application).NameSpace(10);$n=0;$s=0;foreach($i in $b.Items()){$n++;$s+=[int64]$i.Size};@{n=$n;s=$s}|ConvertTo-Json -Compress"); const j = JSON.parse(r.out); o.bin = { size: j.s || 0, count: j.n || 0 }; } catch {}
   return o;
-});
+})().finally(() => { scanP = null; })));
 ipcMain.handle('clean', async (_e, ids) => {
   const res = {}; for (const id of ids) res[id] = clean[id] ? await clean[id]() : false;
   const cfg = load(); cfg.lastClean = Date.now(); save(cfg); return res;
@@ -302,26 +311,32 @@ ipcMain.handle('update', async () => {
 });
 ipcMain.handle('open', (_e, u) => /^https:\/\/github\.com\//.test(u) && shell.openExternal(u));
 // ---------- monitor ao vivo do Painel (só roda enquanto o Painel está aberto) ----------
-let liveT = null, livePS = null, liveCpu = null, liveGD = { gpu: 0, disk: 0 };
+let liveT = null, livePS = null, liveCpu = null, liveGD = { gpu: 0, disk: 0 }, liveWanted = false, liveWC = null;
 const cpuTimes = () => { let idle = 0, total = 0; for (const c of os.cpus()) { for (const k in c.times) total += c.times[k]; idle += c.times.idle; } return { idle, total }; };
-function liveStop() { if (liveT) clearInterval(liveT); liveT = null; if (livePS) { try { livePS.kill(); } catch {} livePS = null; } }
-function liveStart(wc) {
-  liveStop(); liveCpu = cpuTimes();
-  // GPU e disco vêm de contadores do Windows via CIM (nomes em inglês, funcionam em qualquer idioma do Windows)
-  const script = `$ErrorActionPreference='SilentlyContinue';while($true){$g=0;try{$g=[int](Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine|Group-Object{($_.Name -split 'engtype_')[1]}|ForEach-Object{($_.Group|Measure-Object UtilizationPercentage -Sum).Sum}|Measure-Object -Maximum).Maximum}catch{};$d=0;try{$d=[int](Get-CimInstance Win32_PerfFormattedData_PerfDisk_PhysicalDisk -Filter "Name='_Total'").PercentDiskTime}catch{};[Console]::Out.WriteLine('{"gpu":'+[math]::Min(100,$g)+',"disk":'+[math]::Min(100,$d)+'}');[Console]::Out.Flush();Start-Sleep -Milliseconds 700}`;
+// para de amostrar (sem processo do PowerShell e sem timer)
+function liveHalt() { if (liveT) clearInterval(liveT); liveT = null; if (livePS) { try { livePS.kill(); } catch {} livePS = null; } }
+function liveStop() { liveWanted = false; liveHalt(); }
+// Em segundo plano (janela sem foco, minimizada ou na bandeja) NADA é consultado: zero uso de CPU/GPU enquanto você joga.
+const liveCan = () => liveWanted && win && !win.isDestroyed() && win.isVisible() && !win.isMinimized() && win.isFocused();
+function liveSync() { if (liveCan()) { if (!liveT && liveWC && !liveWC.isDestroyed()) liveBegin(liveWC); } else liveHalt(); }
+function liveBegin(wc) {
+  liveHalt(); liveCpu = cpuTimes();
+  // GPU e disco vêm de contadores do Windows via CIM (nomes em inglês, funcionam em qualquer idioma do Windows). Roda com prioridade ociosa e a cada ~2 s.
+  const script = `$ErrorActionPreference='SilentlyContinue';try{[System.Diagnostics.Process]::GetCurrentProcess().PriorityClass='Idle'}catch{};while($true){$g=0;try{$g=[int](Get-CimInstance Win32_PerfFormattedData_GPUPerformanceCounters_GPUEngine|Group-Object{($_.Name -split 'engtype_')[1]}|ForEach-Object{($_.Group|Measure-Object UtilizationPercentage -Sum).Sum}|Measure-Object -Maximum).Maximum}catch{};$d=0;try{$d=[int](Get-CimInstance Win32_PerfFormattedData_PerfDisk_PhysicalDisk -Filter \"Name='_Total'\").PercentDiskTime}catch{};[Console]::Out.WriteLine('{\"gpu\":'+[math]::Min(100,$g)+',\"disk\":'+[math]::Min(100,$d)+'}');[Console]::Out.Flush();Start-Sleep -Milliseconds 2000}`;
   try {
     livePS = spawn('powershell', ['-NoProfile', '-NonInteractive', '-Command', script], { windowsHide: true });
+    try { os.setPriority(livePS.pid, os.constants.priority.PRIORITY_LOW); } catch {}
     livePS.stdout.on('data', d => { const l = String(d).trim().split(/\r?\n/).pop(); try { liveGD = JSON.parse(l); } catch {} });
     livePS.on('error', () => { livePS = null; }); livePS.on('exit', () => { livePS = null; });
   } catch {}
   liveT = setInterval(() => {
+    if (wc.isDestroyed() || !liveCan()) return liveSync();
     const c = cpuTimes(), dt = c.total - liveCpu.total, di = c.idle - liveCpu.idle; liveCpu = c;
     const tot = os.totalmem(), used = tot - os.freemem();
-    if (wc.isDestroyed()) return liveStop();
     wc.send('live:tick', { cpu: dt > 0 ? Math.max(0, Math.min(100, Math.round(100 * (1 - di / dt)))) : 0, ram: Math.round(100 * used / tot), ramUsed: +(used / 2 ** 30).toFixed(1), gpu: liveGD.gpu || 0, disk: liveGD.disk || 0, up: os.uptime() });
   }, 1000);
 }
-ipcMain.handle('live:start', e => { liveStart(e.sender); return true; });
+ipcMain.handle('live:start', e => { liveWanted = true; liveWC = e.sender; liveSync(); return true; });
 ipcMain.handle('live:stop', () => { liveStop(); return true; });
 ipcMain.handle('elevate', () => doElevate());
 ipcMain.handle('adm:set', (_e, on) => { const c = load(); c.alwaysAdmin = !!on; save(c); return c.alwaysAdmin; });
@@ -401,8 +416,10 @@ let win = null, mod = null;
 function createWindow() {
   if (win && !win.isDestroyed()) { if (win.isMinimized()) win.restore(); win.show(); win.focus(); return win; }
   win = new BrowserWindow({ width: 1180, height: 740, minWidth: 960, minHeight: 600, backgroundColor: '#0a0a0a', autoHideMenuBar: true, titleBarStyle: 'hidden', titleBarOverlay: { color: '#0a0a0a', symbolColor: '#c4b5fd', height: 36 }, icon: path.join(__dirname, 'icon.png'),
-    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true } });
-  win.loadFile('index.html'); win.on('closed', () => { win = null; });
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, backgroundThrottling: true } });
+  win.loadFile('index.html'); win.on('closed', () => { win = null; liveStop(); });
+  for (const ev of ['focus', 'blur', 'show', 'hide', 'minimize', 'restore']) win.on(ev, liveSync);
+  win.webContents.once('did-finish-load', () => setTimeout(lowPriority, 2500));
   return win;
 }
 // Reabre o programa como administrador (UAC). Se der certo, grava "sempre administrador" e fecha esta instancia.
@@ -426,6 +443,7 @@ else {
   app.on('second-instance', () => createWindow());
   app.whenReady().then(async () => {
     app.setAppUserModelId('com.luquinhas.boost');
+    lowPriority(); setTimeout(lowPriority, 6000);
     adminNow = await run('net session >nul 2>&1');
     // depois da 1a vez que o usuario pediu administrador, abre sempre como administrador
     if (!adminNow && load().alwaysAdmin && await doElevate()) return;
